@@ -7,6 +7,22 @@
 <!-- HEADER_START: {"lang": "en"} -->
 
 
+Documentation
+# excode: Excess Count Detection in Epidemiological Time Series
+
+<br> 
+<br> 
+
+[**Benedikt Zacher**](https://orcid.org/0000-0002-6107-6389)&sup1;, & [**Ann Christin Vietor**](https://orcid.org/0009-0008-5392-1774)&sup1;
+
+
+
+&emsp;&emsp;&sup1; [Robert Koch-Institut](https://www.rki.de/) | [Fachgebiet 32](https://www.rki.de/DE/Institut/Organisation/Abteilungen/Abteilung-3/FG32/fg32-surveillance-und-elektronisches-melde-und-informationssystem-demis-oegd-kontaktstelle-node.html)
+
+**Cite**  
+Zacher, B., & Vietor, A. (2025). excode: Excess Count Detection in Epidemiological Time Series. Zenodo. [https://doi.org/10.5281/zenodo.15322133](https://doi.org/10.5281/zenodo.15322133)
+
+
 
 <!-- HEADER_END -->
 

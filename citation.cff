@@ -1,0 +1,27 @@
+cff-version: 1.2.0
+type: software
+title: 'excode: Excess Count Detection in Epidemiological Time Series'
+abstract: >-
+  This repository contains the R package excode with a variety of functions for
+  excess count detection in epidemiological time series. Excess count detection
+  is an important part of public health surveillance.
+date-released: '2025-05-02'
+keywords:
+  - Deutschland
+  - Germany
+  - RKI
+  - Open Data
+message: Cite me!
+url: ''
+license: CC-BY-4.0
+doi: 10.5281/zenodo.15322133
+version: '2025-05-02T11:24:17+02:00'
+authors:
+  - family-names: Zacher
+    given-names: Benedikt
+    affiliation: Robert Koch-Institut
+    orcid: 0000-0002-6107-6389
+  - family-names: Vietor
+    given-names: Ann Christin
+    affiliation: Robert Koch-Institut
+    orcid: 0009-0008-5392-1774
