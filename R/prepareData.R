@@ -13,7 +13,7 @@ setMethod("extractModelData",
     "numeric", "numeric"
   ),
   function(survts, model_struct, time_point_to_consider, time_units_back) {
-    timepoints_per_unit <- model_struct@timepoints_per_unit
+    timepoints_per_unit <- survts@freq
     allTimePoints <- rev(seq(time_point_to_consider, length = time_units_back * timepoints_per_unit + 1 + model_struct@w, by = -1))
     allTimePoints <- allTimePoints[allTimePoints > 0]
 
@@ -26,7 +26,6 @@ setMethod("extractModelData",
       vectorOfDates <- seq_len(length(observed))
     }
     dayToConsider <- vectorOfDates[time_point_to_consider]
-    timepoints_per_unit <- survts@freq
     if (epochAsDate) {
       epochStr <- switch(as.character(timepoints_per_unit),
         "12" = "month",
