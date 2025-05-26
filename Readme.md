@@ -12,12 +12,17 @@ Documentation
 
 <br> 
 <br> 
+<br> 
 
 [**Benedikt Zacher**](https://orcid.org/0000-0002-6107-6389)&sup1;, & [**Ann Christin Vietor**](https://orcid.org/0009-0008-5392-1774)&sup1;
 
+<br> 
 
 
-&emsp;&emsp;&sup1; [Robert Koch-Institut](https://www.rki.de/) | [Fachgebiet 32](https://www.rki.de/DE/Institut/Organisation/Abteilungen/Abteilung-3/FG32/fg32-surveillance-und-elektronisches-melde-und-informationssystem-demis-oegd-kontaktstelle-node.html)
+
+&emsp;&emsp;&sup1; [Robert Koch-Institut](https://www.rki.de/) | [Unit 32](https://www.rki.de/EN/Institute/Organisation/Departments/Department-3/Unit-32/unit-32-surveillance-and-demis-focal-point-public-health-service-node.html)
+
+<br> 
 
 **Cite**  
 Zacher, B., & Vietor, A. (2025). excode: Excess Count Detection in Epidemiological Time Series. Zenodo. [https://doi.org/10.5281/zenodo.15322133](https://doi.org/10.5281/zenodo.15322133)
@@ -210,18 +215,20 @@ innovation programme, grant agreement No. 643476).
 If you want to contribute, feel free to fork this repo and send us pull
 requests.
 
-## Guidelines for Reuse of the Code
 
-Open source code from the RKI is available on
-[Zenodo.org](http://Zenodo.org/), [GitHub.com](http://GitHub.com/) and
-[OpenCoDE](https://gitlab.opencode.de):
 
--   <https://zenodo.org/communities/robertkochinstitut>
--   <https://github.com/robert-koch-institut>
--   <https://gitlab.opencode.de/robert-koch-institut>
+<!-- FOOTER_START: {"lang": "en"} -->
+
+## Publication platforms
+
+This software publication is available on [Zenodo.org](http://Zenodo.org/), [GitHub.com](http://GitHub.com/) and [OpenCoDE](https://gitlab.opencode.de):  
+
+- https://zenodo.org/communities/robertkochinstitut  
+- https://github.com/robert-koch-institut  
+- https://gitlab.opencode.de/robert-koch-institut
+
 
 ## License
 
-The **excode** package is free and open-source software, and you are
-welcome to redistribute it under the terms of the [GNU General Public
-License, version 3](https://www.gnu.org/licenses/gpl-3.0.html).
+**excode: Excess Count Detection in Epidemiological Time Series** is free and open-source software, published under the terms of the [GPL3 license](https://www.gnu.org/licenses/gpl-3.0.html).
+<!-- FOOTER_END -->
