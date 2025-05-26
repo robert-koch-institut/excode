@@ -15,7 +15,7 @@ run_excode(
   maxIter = 100,
   verbose = FALSE,
   return_full_model = FALSE,
-  past_timepoints_not_incuded = 26,
+  past_timepoints_not_included = 26,
   time_units_back = 5,
   timepoints_per_unit = 52
 )
@@ -28,7 +28,7 @@ run_excode(
   maxIter = 100,
   verbose = FALSE,
   return_full_model = FALSE,
-  past_timepoints_not_incuded = 26,
+  past_timepoints_not_included = 26,
   time_units_back = 5,
   timepoints_per_unit = 52
 )
@@ -41,7 +41,7 @@ run_excode(
   maxIter = 100,
   verbose = FALSE,
   return_full_model = FALSE,
-  past_timepoints_not_incuded = 26,
+  past_timepoints_not_included = 26,
   time_units_back = 5,
   timepoints_per_unit = 52
 )
@@ -54,7 +54,7 @@ run_excode(
   maxIter = 100,
   verbose = FALSE,
   return_full_model = FALSE,
-  past_timepoints_not_incuded = 26,
+  past_timepoints_not_included = 26,
   time_units_back = 5,
   timepoints_per_unit = 52
 )
@@ -95,7 +95,7 @@ model output. If \code{FALSE} (default), only results for the specified
 \code{timepoints} are returned. If \code{TRUE}, the complete time series used
 for model fitting is returned.}
 
-\item{past_timepoints_not_incuded}{An \code{integer} specifying the number of past
+\item{past_timepoints_not_included}{An \code{integer} specifying the number of past
 time points to exclude from initialization. Defaults to \code{26}. If your data is daily then the past x days are excluded, for weekly data the past x weeks are excluded.}
 
 \item{time_units_back}{An \code{integer} specifying how many past time units to include when fitting the model.
@@ -151,7 +151,8 @@ result_list <- run_excode(
 # Two examples for the usage of time_units_back and timepoints_per_unit
 # Example 4:
 # Weekly data with unit year and using 3 past years for fitting
-result_shadar_har_3 <- run_excode(shadar_df, excode_har_pois, 209:295, time_units_back = 3, timepoints_per_unit = 52)
+result_shadar_har_3 <- run_excode(shadar_df, excode_har_pois, 209:295, 
+time_units_back = 3, timepoints_per_unit = 52)
 
 
 # Example 5:
@@ -170,7 +171,7 @@ result_sarscov2_custom <- run_excode(sarscov2_df,
   excode_custom_pois,
   93:154,
   time_units_back = 8,
-  past_timepoints_not_incuded = 2
+  past_timepoints_not_included = 2
 )
 
 }

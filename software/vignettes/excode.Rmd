@@ -291,7 +291,7 @@ result_sarscov2_custom <- run_excode(sarscov2_df,
   excode_custom_pois,
   93:154,
   time_units_back = 8,
-  past_timepoints_not_incuded = 2
+  past_timepoints_not_included = 2
 )
 summary_sarscov2_custom <- summary(result_sarscov2_custom)
 ```

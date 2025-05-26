@@ -7,7 +7,7 @@
 #' @param maxIter Maximal number of iteration for EM-algorithm.
 #' @param verbose Logical indicating wehther progress should be printed.
 #' @param return_full_model If FALSE (default) only results for 'timepoint' are returend. If TRUE, the complete time series used for model fitting is returned by the function.
-#' @param past_timepoints_not_incuded Past time points not included in initialization.
+#' @param past_timepoints_not_included Past time points not included in initialization.
 #' @param time_units_back Number of years to be used for model fitting.
 #'
 #' @seealso \code{\linkS4class{excodeModel}}
@@ -15,7 +15,7 @@
 #' @keywords internal
 #' @noRd
 run_excode_internal <- function(surv_ts, excode_model, timepoints, learning_type = "unsupervised", maxIter = 100,
-                                verbose = FALSE, return_full_model = FALSE, past_timepoints_not_incuded = 26, time_units_back = 5) {
+                                verbose = FALSE, return_full_model = FALSE,past_timepoints_not_included  = 26, time_units_back = 5) {
   excode_model_init <- excode_model
 
   transMat_init <- excode_model@transitions
@@ -42,8 +42,8 @@ run_excode_internal <- function(surv_ts, excode_model, timepoints, learning_type
       {
         modelData <- prepareData(surv_ts, excode_model, k,
           id = "ts1", time_units_back = time_units_back,
-          past_weeks_not_included_state = past_timepoints_not_incuded,
-          past_weeks_not_included_init = past_timepoints_not_incuded
+          past_weeks_not_included_state = past_timepoints_not_included,
+          past_weeks_not_included_init = past_timepoints_not_included
         )
 
         if (learning_type %in% c("unsupervised", "semisupervised")) {
@@ -384,7 +384,7 @@ merge_results <- function(excode_model_fit_list) {
 #' model output. If \code{FALSE} (default), only results for the specified
 #' \code{timepoints} are returned. If \code{TRUE}, the complete time series used
 #' for model fitting is returned.
-#' @param past_timepoints_not_incuded An \code{integer} specifying the number of past
+#' @param past_timepoints_not_included An \code{integer} specifying the number of past
 #' time points to exclude from initialization. Defaults to \code{26}. If your data is daily then the past x days are excluded, for weekly data the past x weeks are excluded.
 #' @param time_units_back An \code{integer} specifying how many past time units to include when fitting the model.
 #' The default is \code{5}. For example, if \code{timepoints_per_unit = 52} (weekly data),
@@ -451,11 +451,11 @@ merge_results <- function(excode_model_fit_list) {
 #'   excode_custom_pois,
 #'   93:154,
 #'   time_units_back = 8,
-#'   past_timepoints_not_incuded = 2
+#'   past_timepoints_not_included = 2
 #' )
 #'
 #' @export
-setGeneric("run_excode", function(surv_ts, excode_model, timepoints, learning_type = "unsupervised", maxIter = 100, verbose = FALSE, return_full_model = FALSE, past_timepoints_not_incuded = 26, time_units_back = 5, timepoints_per_unit = 52) standardGeneric("run_excode"))
+setGeneric("run_excode", function(surv_ts, excode_model, timepoints, learning_type = "unsupervised", maxIter = 100, verbose = FALSE, return_full_model = FALSE, past_timepoints_not_included = 26, time_units_back = 5, timepoints_per_unit = 52) standardGeneric("run_excode"))
 
 
 #' Method for sts input
@@ -463,8 +463,8 @@ setGeneric("run_excode", function(surv_ts, excode_model, timepoints, learning_ty
 #' @rdname run_excode
 setMethod("run_excode",
   signature = c("sts", "excodeModel"),
-  function(surv_ts, excode_model, timepoints, learning_type = "unsupervised", maxIter = 100, verbose = FALSE, return_full_model = FALSE, past_timepoints_not_incuded = 26, time_units_back = 5, timepoints_per_unit = 52) {
-    run_excode_internal(surv_ts, excode_model, timepoints, learning_type, maxIter, verbose, return_full_model, past_timepoints_not_incuded, time_units_back)
+  function(surv_ts, excode_model, timepoints, learning_type = "unsupervised", maxIter = 100, verbose = FALSE, return_full_model = FALSE, past_timepoints_not_included = 26, time_units_back = 5, timepoints_per_unit = 52) {
+    run_excode_internal(surv_ts, excode_model, timepoints, learning_type, maxIter, verbose, return_full_model, past_timepoints_not_included, time_units_back)
   }
 )
 
@@ -473,8 +473,8 @@ setMethod("run_excode",
 #' @rdname run_excode
 setMethod("run_excode",
   signature = c("list", "excodeModel"),
-  function(surv_ts, excode_model, timepoints, learning_type = "unsupervised", maxIter = 100, verbose = FALSE, return_full_model = FALSE, past_timepoints_not_incuded = 26, time_units_back = 5, timepoints_per_unit = 52) {
-    run_excode_internal(surv_ts[sort(names(surv_ts))], excode_model, timepoints, learning_type, maxIter, verbose, return_full_model, past_timepoints_not_incuded, time_units_back)
+  function(surv_ts, excode_model, timepoints, learning_type = "unsupervised", maxIter = 100, verbose = FALSE, return_full_model = FALSE, past_timepoints_not_included = 26, time_units_back = 5, timepoints_per_unit = 52) {
+    run_excode_internal(surv_ts[sort(names(surv_ts))], excode_model, timepoints, learning_type, maxIter, verbose, return_full_model, past_timepoints_not_included, time_units_back)
   }
 )
 #' Method for data.frame input
@@ -482,7 +482,7 @@ setMethod("run_excode",
 #' @rdname run_excode
 setMethod("run_excode",
   signature = c("data.frame", "excodeModel"),
-  function(surv_ts, excode_model, timepoints, learning_type = "unsupervised", maxIter = 100, verbose = FALSE, return_full_model = FALSE, past_timepoints_not_incuded = 26, time_units_back = 5, timepoints_per_unit = 52) {
+  function(surv_ts, excode_model, timepoints, learning_type = "unsupervised", maxIter = 100, verbose = FALSE, return_full_model = FALSE, past_timepoints_not_included = 26, time_units_back = 5, timepoints_per_unit = 52) {
     if (!any(names(surv_ts) == "state")) {
       if (learning_type %in% c("semisupervised", "supervised")) {
         stop("Variable \'state\' must be provided with method \'", learning_type, "\'\n")
@@ -506,7 +506,7 @@ setMethod("run_excode",
       surv_ts_list[sort(names(surv_ts_list))],
       excode_model, timepoints, learning_type,
       maxIter, verbose, return_full_model,
-      past_timepoints_not_incuded, time_units_back
+      past_timepoints_not_included, time_units_back
     )
   }
 )
