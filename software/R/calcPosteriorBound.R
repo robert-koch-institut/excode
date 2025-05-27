@@ -15,11 +15,10 @@ calcPosteriorBound <- function(excode_model, min_posterior, maxiter = 1000) {
         excode_model@timepoint_fit == timepoint_fit &
         excode_model@timepoint %in% alpha_timepoint)
 
-      # print(excode_model@alpha[alpha_index,])
       mu_index <- which(excode_model@timepoint == timepoint_fit &
         excode_model@timepoint_fit == timepoint_fit &
         excode_model@id == id)
-      # print(mu_index)
+
       mu0 <- excode_model@emission@mu0[mu_index]
       mu1 <- excode_model@emission@mu1[mu_index]
 
@@ -68,7 +67,6 @@ calcPosteriorBound <- function(excode_model, min_posterior, maxiter = 1000) {
         }
         alpha0[length(alpha0) + 1] <- alpha[t, 1]
         alpha1[length(alpha0) + 1] <- alpha[t, 2]
-        # print(c(y,alpha[t,2]))
 
         if (alpha_init[2, 2] >= min_posterior) {
           y <- y - 1

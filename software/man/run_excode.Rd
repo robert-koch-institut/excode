@@ -60,8 +60,21 @@ run_excode(
 )
 }
 \arguments{
-\item{surv_ts}{A surveillance time series, which can be a \code{data.frame},
-an \code{sts} object, or a list of \code{sts} objects.}
+\item{surv_ts}{A surveillance time series input. This can be one of the following:
+\itemize{
+  \item A \code{data.frame}, which can represent either a single or multiple time series.
+        This data.frame contains the following columns:
+        \itemize{
+          \item \strong{date}: The date of aggregation.
+          \item \strong{observed}: The observed number of cases.
+          \item \strong{id}: The identifier of the time series (even if only one).
+          \item \strong{offset} (optional): For example, the susceptible population.
+          \item \strong{state} (optional): Indicates periods with special events such as outbreaks
+            (e.g., 0 = normal, 1 = excess cases, NA = unknown).
+        }
+  \item A single \code{sts} object containing one timeseries.
+  \item A named list of \code{sts} objects, each representing a separate time series.
+}}
 
 \item{excode_model}{An object of class \code{\linkS4class{excodeModel}} which specifies the model parameters and structure}
 
@@ -83,11 +96,15 @@ model output. If \code{FALSE} (default), only results for the specified
 for model fitting is returned.}
 
 \item{past_timepoints_not_incuded}{An \code{integer} specifying the number of past
-time points to exclude from initialization. Defaults to \code{26}.}
+time points to exclude from initialization. Defaults to \code{26}. If your data is daily then the past x days are excluded, for weekly data the past x weeks are excluded.}
 
-\item{time_units_back}{Number of years to be used for model fitting.}
+\item{time_units_back}{An \code{integer} specifying how many past time units to include when fitting the model.
+The default is \code{5}. For example, if \code{timepoints_per_unit = 52} (weekly data),
+then this corresponds to using the past 5 years of data. If \code{timepoints_per_unit = 7} (daily data and the units are weeks) then time_units_back equal to \code{5} corresponds to the past 5 weeks.}
 
-\item{timepoints_per_unit}{Number of time points within the considered time unit (e.g. 52 for weekly observations in a year).}
+\item{timepoints_per_unit}{An \code{integer} giving the number of time points within one time unit.
+For example, use \code{52} for weekly data over a year, \code{7} for daily data with weekly cycles,
+or \code{365} for daily data with annual cycles. The default is \code{52}.}
 }
 \value{
 Returns a fitted \code{\linkS4class{excodeModel}} object.
@@ -97,28 +114,64 @@ This function fits an `excodeModel` to epidemiological surveillance data
 and returns the estimated parameters of an `excodeFamily`. It can handle
 single or multiple time series.
 }
+\details{
+This function currently accepts a single `sts` object, a `data.frame`, or a **named list of `sts` objects**.
+However, a **an `sts` object matrix** such as the `measlesDE` dataset from the surveillance package is currently not supported and will result in an error.
+}
 \examples{
 
-# Example 1: Run with harmonic Poisson model using data.frame
+# Creating a Poisson harmonic model for the examples
 excode_family_pois <- excodeFamily("Poisson")
 excode_formula_har <- excodeFormula("Harmonic")
 excode_har_pois <- excodeModel(
   excode_family_pois,
   excode_formula_har
 )
+# Example 1: Using data.frame as input time series
 data(shadar_df)
 result_shadar_har <- run_excode(shadar_df, excode_har_pois, 209:295)
 
 
-# Example 2: Run with sts object (from 'surveillance' package)
-\dontrun{
+# Example 2: Using an sts object (from 'surveillance' package) as input time series
 library(surveillance)
 data(stsNewport)
 result_newport_har <- run_excode(stsNewport, excode_har_pois, 209:295)
-}
 
-# TODO need an example different usage of time_units_back and
-# timepoints_per_unit which is simpler than the one in vignette
+# Example 3: Using a named list of two sts objects as input
+stsShadar <- surveillance::sts(shadar_df$observed,
+  epoch = shadar_df$date,
+  state = shadar_df$state
+)
+named_list <- c("salmNewport" = stsNewport, "shadar" = stsShadar)
+result_list <- run_excode(
+  named_list,
+  excode_har_pois, 290
+)
+
+# Two examples for the usage of time_units_back and timepoints_per_unit
+# Example 4:
+# Weekly data with unit year and using 3 past years for fitting
+result_shadar_har_3 <- run_excode(shadar_df, excode_har_pois, 209:295, time_units_back = 3, timepoints_per_unit = 52)
+
+
+# Example 5:
+# Daily data with unit week, using 8 weeks of historic data to fit the model, not including the past two days, fitting a custom model
+num_wday <- lubridate::wday(sarscov2_df$date, week_start = 1)
+weekday <- data.frame(day = factor(ifelse(num_wday <= 5, "workday", "weekend"),
+  levels = c("workday", "weekend")
+))
+
+excode_formula_custom <- excodeFormula("Custom", data = weekday, timepoints_per_unit = 7)
+excode_custom_pois <- excodeModel(
+  excode_family_pois,
+  excode_formula_custom
+)
+result_sarscov2_custom <- run_excode(sarscov2_df,
+  excode_custom_pois,
+  93:154,
+  time_units_back = 8,
+  past_timepoints_not_incuded = 2
+)
 
 }
 \seealso{

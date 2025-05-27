@@ -13,7 +13,7 @@ setMethod("extractModelData",
     "numeric", "numeric"
   ),
   function(survts, model_struct, time_point_to_consider, time_units_back) {
-    timepoints_per_unit <- model_struct@timepoints_per_unit
+    timepoints_per_unit <- survts@freq
     allTimePoints <- rev(seq(time_point_to_consider, length = time_units_back * timepoints_per_unit + 1 + model_struct@w, by = -1))
     allTimePoints <- allTimePoints[allTimePoints > 0]
 
@@ -26,7 +26,6 @@ setMethod("extractModelData",
       vectorOfDates <- seq_len(length(observed))
     }
     dayToConsider <- vectorOfDates[time_point_to_consider]
-    timepoints_per_unit <- survts@freq
     if (epochAsDate) {
       epochStr <- switch(as.character(timepoints_per_unit),
         "12" = "month",
@@ -196,11 +195,6 @@ setMethod("extractModelData",
       season_df <- season_df[take, ]
       names(season_df) <- paste0("season_", 1:model_struct@df_season)
 
-
-      # season_df <- data.frame(cbind(sin(2*pi*modelData$wtime/model_struct@timepoints_per_unit),
-      #                   cos(2*pi*modelData$wtime/model_struct@timepoints_per_unit)))
-      # names(season_df) <- paste0("season_", 1:2)
-
       modelData <- cbind(modelData, season_df)
     }
     modelData$date <- epoch(survts)[allTimePoints]
@@ -333,7 +327,7 @@ setMethod("prepareData",
       survts, hmm@emission@excode_formula,
       time_point_to_consider, time_units_back
     )
-    # modelData$denom = log(survts@populationFrac[modelData$rtime])
+
     modelData$id <- id
     modelData <- addDistrData(hmm@emission@distribution, modelData)
 

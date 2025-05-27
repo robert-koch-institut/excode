@@ -45,31 +45,12 @@ fitUnsupervised <- function(hmm, modelData, transMat_init, learning_type = "unsu
   # Calculate prior weights
   prior_weights <- transMat_init * base_weight * stationary_state
 
-
-  #    base_weight =  matrix(nrow(modelData), nrow=2, ncol=2)
-  #    prior_weights = transMat_init*base_weight*t(mpow(transMat_init, 50))
-
-  #    nid = length(unique(modelData$id))
-  #    base_weight =  matrix(min(c(nrow(modelData), time_units_back*hmm@emission@excode_formula@timepoints_per_unit*nid)), nrow=2, ncol=2)
-  #    prior_weights = transMat_init*base_weight*t(mpow(transMat_init, 50))
-  #    print(prior_weights)
-  #    print(t(mpow(transMat_init, 50)))
-
-
   hmm@prior_weights <- prior_weights
   initProb <- hmm@initial_prob
 
   emission_prob <- calcEmissionProb(hmm@emission@distribution, model)
-  # print("aaaa")
-  # print(any(is.na(emission_prob)))
   hmm_expectation <- forwardBackward(hmm, model, emission_prob)
-  # print(hmm@emission@mu)
-  # print(nrow( emission_prob))
-  # print(nrow( hmm@emission@mu))
-  # print(nrow( hmm_expectation$gamma))
-  # print(model$state)
-  # cbind(hmm_expectation$gamma, matrix(model$mu, ncol=3), emission_prob, model$response,  matrix(model$state, ncol=3)) %>% View()
-  # stop("nein")
+
   old_loglik <- -Inf
 
   if (hmm@transitions_prior) {
@@ -80,8 +61,6 @@ fitUnsupervised <- function(hmm, modelData, transMat_init, learning_type = "unsu
         hmm@prior_weights[i, ]
       )
     }
-    # log_dir1 = log_dirichlet(hmm@transitions[1,], hmm@prior_weights[1,])
-    # log_dir2 = log_dirichlet(hmm@transitions[2,], hmm@prior_weights[2,])
     hmm@loglik_transitions <- log_dir_ll # log_dir1 + log_dir2
   }
 
@@ -97,7 +76,6 @@ fitUnsupervised <- function(hmm, modelData, transMat_init, learning_type = "unsu
   # EM iterations
   while (curr_diff > 1e-6 & niter <= maxIter) {
     old_loglik <- new_loglik
-    # print(hmm_expectation$gamma)
     omega <- as.vector(hmm_expectation$gamma)
     model_updated <- updateEmission(hmm@emission, model, omega)
     hmm@emission <- model_updated$emission

@@ -237,7 +237,9 @@ setMethod(f = "show", signature = c("MultiState"), function(object) {
 #'
 #' @param name Character. Name of the model. Must be one of c("Mean", "FarringtonNoufaily", "Harmonic", "Custom", "MultiState").
 #' @param S Integer. Number of oscillations during one year for Harmonic models. Default is 1.
-#' @param timepoints_per_unit Integer. Number of time points within the considered time unit (e.g. 52 for weekly observations in a year). Default is 52.
+#' @param timepoints_per_unit An \code{integer} giving the number of time points within one time unit. 
+#' For example, use \code{52} for weekly data over a year, \code{7} for daily data with weekly cycles, 
+#' or \code{365} for daily data with annual cycles. The default is \code{52}.
 #' @param noPeriods Integer. Number of levels in the factor which creates bins in each year to model seasonal patterns. Only used in 'FarringtonNoufaily' models. Default is 10.
 #' @param w Integer. The number of weeks before and after the current week to include in the bin which contains the respective week in each year. Only used in 'FarringtonNoufaily' models. Default is 3.
 #' @param timeTrend Logical. Indicates whether a time trend should be included in the model. Used in 'Mean', 'Harmonic' and 'FarringtonNoufaily' models. Default is TRUE.
