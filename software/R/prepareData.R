@@ -13,7 +13,7 @@ setMethod("extractModelData",
     "numeric", "numeric"
   ),
   function(survts, model_struct, time_point_to_consider, time_units_back) {
-    timepoints_per_unit <- survts@freq
+    timepoints_per_unit <- model_struct@timepoints_per_unit
     allTimePoints <- rev(seq(time_point_to_consider, length = time_units_back * timepoints_per_unit + 1 + model_struct@w, by = -1))
     allTimePoints <- allTimePoints[allTimePoints > 0]
 
