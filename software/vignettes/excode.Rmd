@@ -284,7 +284,7 @@ excode_custom_pois <- excodeModel(
 )
 ```
 
-After this, the model is fitted, taking into account 8 weeks of historic data (`time_units_back = 8 `).
+After this, the model is fitted, taking into account 8 weeks of historic data (`time_units_back = 8 `) and excluding the past two days for fitting (`past_timepoints_not_included = 2`).
 
 ```{r}
 result_sarscov2_custom <- run_excode(sarscov2_df,
