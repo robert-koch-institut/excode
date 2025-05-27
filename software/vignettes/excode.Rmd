@@ -47,7 +47,7 @@ All of the above mentioned models use two states - a 'normal' and an 'excess' st
 Figure 1 shows examples for the 'Mean', 'Harmonic' and 'FarringtonNoufaily' model. 
 
 
-```{r Example Mean model, echo=FALSE, fig.cap = "**Figure 1:** Examples for the 'Mean', 'Harmonic' and 'FarringtonNoufaily' model.", fig.align="center", fig.width=6, fig.height=5}
+```{r example_mean_har_farr_model, echo=FALSE, fig.cap = "**Figure 1:** Examples for the 'Mean', 'Harmonic' and 'FarringtonNoufaily' model.", fig.align="center", fig.width=6, fig.height=5}
 library(excode)
 data("snewport_df")
 data("shadar_df")
@@ -161,7 +161,7 @@ kable(as_tibble(shadar_df[1:6, ])) %>%
 
 Figure 2 shows that there is a cyclical pattern of case counts, with more cases during the summer and fewer cases cases during the winter There is also a decrease of reported cases over the years, except  for the year 2006,  [where an outbreak lead to a surge in case numbers compared to previous years](https://www.rki.de/DE/Content/Infekt/EpidBull/Archiv/2006/Ausgabenlinks/31_06.pdf?__blob=publicationFile). 
 
-```{r Loading salmNewport, message=FALSE, warning=FALSE, fig.cap = "**Figure 2:** Weekly *Salmonella Newport* cases.", fig.align="center", fig.width=6, fig.height=3}
+```{r plot_shadar, message=FALSE, warning=FALSE, fig.cap = "**Figure 2:** Weekly *Salmonella Newport* cases.", fig.align="center", fig.width=6, fig.height=3}
 # Plot the time series
 ggplot(shadar_df, aes(x = date, y = observed)) +
   geom_col(color = "grey", fill = "lightgrey") +
@@ -174,7 +174,7 @@ ggplot(shadar_df, aes(x = date, y = observed)) +
 Before running the excess count detection, the user needs to decide which probability distribution and which model should be used. This is done using the `excodeFamily` and `excodeFormula` objects of the *excode* package. Both are then combined into an `excodeModel` object, which stores all necessary parameters and specifications for model fitting. In this example, the 'Poisson' distribution and - due to the cyclical and long-term time trend - the 'Harmonic' model is chosen. 
 
 
-```{r Define Mean model, message=FALSE, warning=FALSE}
+```{r define_poisson_harmonic_model, message=FALSE, warning=FALSE}
 # Use a 'Poisson' distribution in excodeFamily
 excode_family_pois <- excodeFamily("Poisson")
 # Define the 'Harmonic' model in excodeFormula
@@ -195,7 +195,7 @@ excode_har_pois
 The `run_excode()` function then performs the excess count detection. This function accepts different data types for the surveillance timeseries (sts, data.frame, list of sts objects). The output is a fitted `excodeModel` object - `result_shadar_har` - that stores results for 87 time points.
 
 
-```{r Run Harmonic model}
+```{r run_harmonic_model}
 # Run excode on time points 209-295
 result_shadar_har <- run_excode(
   shadar_df,
@@ -231,7 +231,7 @@ The result is a `data.frame` with the following variables:
 
 Figure 3 shows the input data with the estimated alarm thresholds (*posterior_ub* and *pval_ub*):
 
-```{r, fig.width=6, fig.height=4, fig.align="center", message=FALSE, warning=FALSE, fig.cap = "**Figure 3:** Weekly *Salmonella Newport* cases with alarm thresholds (upper bounds)."}
+```{r, fig.width=6, fig.height=4, fig.align="center", message=FALSE, warning=FALSE, fig.cap = "**Figure 3:** Weekly *Salmonella Hadar* cases with alarm thresholds (upper bounds)."}
 ggplot(
   shadar_df %>% filter(year(date) >= 2003),
   aes(x = date, y = observed)
@@ -330,7 +330,7 @@ ggplot(
 
 The 'MultiState' model allows multiple states, which can be necessary if the use of only one excess state is not sufficient to model the data. This can be the case when the range of excess counts is very large. To illustrate application of the 'MultiState' model, weekly all-cause mortality data reported to the [German Federal Statistical Office](https://www.destatis.de/DE/Themen/Gesellschaft-Umwelt/Bevoelkerung/Sterbefaelle-Lebenserwartung/sterbefallzahlen.html) is used (Figure 5). The 'MultiState' model with four states is applied to detect weeks with excess mortality in the time series.
 
-```{r data mort_df_germany, fig.width=6, fig.height=3, fig.align="center", fig.align="center", fig.align="center", message=FALSE, warning=FALSE, fig.cap = "**Figure 5:** Weekly all-cause mortaility in Germany."}
+```{r data_mort_df_germany, fig.width=6, fig.height=3, fig.align="center", fig.align="center", fig.align="center", message=FALSE, warning=FALSE, fig.cap = "**Figure 5:** Weekly all-cause mortaility in Germany."}
 data("mort_df_germany")
 
 ggplot(mort_df_germany) +
@@ -353,7 +353,7 @@ kable(as_tibble(mort_df_germany[1:6, ])) %>%
 
 Using a negative binomial model, the baseline mortality is estimated as follows:
   
-```{r multistate bckg model, fig.width=6, fig.height=4, fig.align="center"}
+```{r multistate_bckg_model, fig.width=6, fig.height=4, fig.align="center"}
 # Fit background model
 formula_bckg <- "observed ~ sin52 + cos52 + timepoint"
 mort_glm_bckg <- glm.nb(formula_bckg, mort_df_germany %>%
@@ -369,7 +369,7 @@ theta <- mort_glm_bckg$theta
 
 *excode* models the mean of the excess states as multiplicative increase compared to the mean of the normal/background state. Initial estimates for the mean of each excess state are chosen as the 75%-, 85%-, and 95%-quantile of the relative increase of the observed number of deaths compared to the estimated baseline, which corresponds to a 6%, 10% and 21% increase:
 
-```{r multistate initial increase, fig.width=6, fig.height=4, fig.align="center"}
+```{r multistate_initial_increase, fig.width=6, fig.height=4, fig.align="center"}
 # Relative increase of observed mortality compared to background
 p_increase <- mort_df_germany$observed / mort_bckg_mu
 
@@ -388,7 +388,7 @@ old_options <- options()
 options(digits = 6)
 ```
 
-```{r initial mu, fig.width=6, fig.height=4, fig.align="center"}
+```{r initial_mu, fig.width=6, fig.height=4, fig.align="center"}
 # Initial estimates of expected mortality of all states
 initial_mu <- mort_bckg_mu %*% t(state_increase)
 kable(as_tibble(initial_mu[1:6, ])) %>%
@@ -403,7 +403,7 @@ options(digits = 3)
 
 Now the model can be defined using `excodeFormula()`. In this example, the estimated baseline (mu0)  is kept fixed during model fitting. To achieve this, it is included as offset (`offset = TRUE`) in the estimation and the model is estimated without intercept (`intercept = FALSE`):
 
-```{r multistate model, fig.width=6, fig.height=4, fig.align="center"}
+```{r multistate_model, fig.width=6, fig.height=4, fig.align="center"}
 nStates <- 4
 excode_formula_multistate <- excodeFormula("MultiState",
   nStates = nStates,
@@ -419,7 +419,7 @@ excode_multistate_nb <- excodeModel(excode_family_nb,
 
 The last step before fitting the *excode* model is to define the input `data.frame` containg all necessary variables. Note that the offset variable is set to the estimated baseline mortality (`mort_bckg_mu`) and timepoints where no excess is assumed are included as 0s in the `state` variable (NA for other weeks).
 
-```{r multistate input data, fig.width=6, fig.height=4, fig.align="center"}
+```{r multistate_input_data, fig.width=6, fig.height=4, fig.align="center"}
 # Create input data.frame
 mort_df_germany_input <- mort_df_germany %>%
   mutate(
@@ -433,7 +433,7 @@ mort_df_germany_input <- mort_df_germany %>%
 
 The 'MultiState' model can now be fitted using `run_excode()` as usual:
 
-```{r multistate fit, fig.width=7, fig.height=5, fig.align="center"}
+```{r multistate_fit, fig.width=7, fig.height=5, fig.align="center"}
 res_excode_multistate_nb <- run_excode(mort_df_germany_input,
   excode_multistate_nb,
   nrow(mort_df_germany_input),
@@ -445,7 +445,7 @@ res_mort_germany <- summary(res_excode_multistate_nb)
 
 The results and weekly excess probablities can be plottad as follows:
 
-```{r multistate plot, fig.width=7, fig.height=5, fig.align="center", fig.align="center", message=FALSE, warning=FALSE, fig.cap = "**Figure 6:** *Top*: Weekly all-cause mortaility in Germany and expected mortality of the normal and three excess states are shown. Weeks with excess probabilty>0.5 are shown in blue. *Bottom*: Weekly excess probability."}
+```{r multistate_plot, fig.width=7, fig.height=5, fig.align="center", fig.align="center", message=FALSE, warning=FALSE, fig.cap = "**Figure 6:** *Top*: Weekly all-cause mortaility in Germany and expected mortality of the normal and three excess states are shown. Weeks with excess probabilty>0.5 are shown in blue. *Bottom*: Weekly excess probability."}
 p1 <- ggplot(res_mort_germany %>% mutate(
   obs_excess = ifelse(1 - posterior0 > 0.5, observed, NA),
   group = "Data and model fit"
@@ -502,7 +502,7 @@ grid.arrange(grobs = list(p1, p2), nrow = 2, layout_matrix = layout)
 
 The *excode* package combines Generalized Linear Models (GLMs) with Hidden Markov Models (HMMs). The GLM part of the model allows to use  regression models to  model seasonal patterns and general trends in the time series. Besides seasonal patterns and general time trends, an algorithm for excess count detection needs to account for excess counts in the historic data used for model estimation. The HMM part of the statistical model used in *excode* allows to explicitly consider past disease outbreaks in the model. The HMM separates the time series in two (or more) states: the normal state and one (or multiple) excess state. In the normal state, observed case counts lie within the range of what is normally expected in a certain time period. In the excess state, case counts are higher than what is normally expected, i.e. there is a potential outbreak or excess mortality. This is in contrast most of other algorithms used for excess count detection, which either do not account for previous excess case counts or use some heuristic for down weighting past instances of excess counts. 
 
-```{r Create model overview, fig.width=7, fig.height=5, fig.align="center", fig.cap = "**Figure 7:** Components of an *excode* Harmonic model using a Poisson distribution."}
+```{r create_model_overview, fig.width=7, fig.height=5, fig.align="center", fig.cap = "**Figure 7:** Components of an *excode* Harmonic model using a Poisson distribution."}
 har_model_pois <- run_excode(shadar_df, excode_har_pois, 285,
   return_full_model = TRUE
 )
