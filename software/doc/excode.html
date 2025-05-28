@@ -1,0 +1,1785 @@
+<!DOCTYPE html>
+
+<html>
+
+<head>
+
+<meta charset="utf-8" />
+<meta name="generator" content="pandoc" />
+<meta http-equiv="X-UA-Compatible" content="IE=EDGE" />
+
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+
+<meta name="author" content="Benedikt Zacher" />
+
+<meta name="date" content="2025-05-27" />
+
+<title>Excess count detection for epidemiological time series</title>
+
+<script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
+// be compatible with the behavior of Pandoc < 2.8).
+document.addEventListener('DOMContentLoaded', function(e) {
+  var hs = document.querySelectorAll("div.section[class*='level'] > :first-child");
+  var i, h, a;
+  for (i = 0; i < hs.length; i++) {
+    h = hs[i];
+    if (!/^h[1-6]$/i.test(h.tagName)) continue;  // it should be a header h1-h6
+    a = h.attributes;
+    while (a.length > 0) h.removeAttribute(a[0].name);
+  }
+});
+</script>
+<script>$(document).ready(function(){
+    if (typeof $('[data-toggle="tooltip"]').tooltip === 'function') {
+        $('[data-toggle="tooltip"]').tooltip();
+    }
+    if ($('[data-toggle="popover"]').popover === 'function') {
+        $('[data-toggle="popover"]').popover();
+    }
+});
+</script>
+<style type="text/css">
+.lightable-minimal {
+border-collapse: separate;
+border-spacing: 16px 1px;
+width: 100%;
+margin-bottom: 10px;
+}
+.lightable-minimal td {
+margin-left: 5px;
+margin-right: 5px;
+}
+.lightable-minimal th {
+margin-left: 5px;
+margin-right: 5px;
+}
+.lightable-minimal thead tr:last-child th {
+border-bottom: 2px solid #00000050;
+empty-cells: hide;
+}
+.lightable-minimal tbody tr:first-child td {
+padding-top: 0.5em;
+}
+.lightable-minimal.lightable-hover tbody tr:hover {
+background-color: #f5f5f5;
+}
+.lightable-minimal.lightable-striped tbody tr:nth-child(even) {
+background-color: #f5f5f5;
+}
+.lightable-classic {
+border-top: 0.16em solid #111111;
+border-bottom: 0.16em solid #111111;
+width: 100%;
+margin-bottom: 10px;
+margin: 10px 5px;
+}
+.lightable-classic tfoot tr td {
+border: 0;
+}
+.lightable-classic tfoot tr:first-child td {
+border-top: 0.14em solid #111111;
+}
+.lightable-classic caption {
+color: #222222;
+}
+.lightable-classic td {
+padding-left: 5px;
+padding-right: 5px;
+color: #222222;
+}
+.lightable-classic th {
+padding-left: 5px;
+padding-right: 5px;
+font-weight: normal;
+color: #222222;
+}
+.lightable-classic thead tr:last-child th {
+border-bottom: 0.10em solid #111111;
+}
+.lightable-classic.lightable-hover tbody tr:hover {
+background-color: #F9EEC1;
+}
+.lightable-classic.lightable-striped tbody tr:nth-child(even) {
+background-color: #f5f5f5;
+}
+.lightable-classic-2 {
+border-top: 3px double #111111;
+border-bottom: 3px double #111111;
+width: 100%;
+margin-bottom: 10px;
+}
+.lightable-classic-2 tfoot tr td {
+border: 0;
+}
+.lightable-classic-2 tfoot tr:first-child td {
+border-top: 3px double #111111;
+}
+.lightable-classic-2 caption {
+color: #222222;
+}
+.lightable-classic-2 td {
+padding-left: 5px;
+padding-right: 5px;
+color: #222222;
+}
+.lightable-classic-2 th {
+padding-left: 5px;
+padding-right: 5px;
+font-weight: normal;
+color: #222222;
+}
+.lightable-classic-2 tbody tr:last-child td {
+border-bottom: 3px double #111111;
+}
+.lightable-classic-2 thead tr:last-child th {
+border-bottom: 1px solid #111111;
+}
+.lightable-classic-2.lightable-hover tbody tr:hover {
+background-color: #F9EEC1;
+}
+.lightable-classic-2.lightable-striped tbody tr:nth-child(even) {
+background-color: #f5f5f5;
+}
+.lightable-material {
+min-width: 100%;
+white-space: nowrap;
+table-layout: fixed;
+font-family: Roboto, sans-serif;
+border: 1px solid #EEE;
+border-collapse: collapse;
+margin-bottom: 10px;
+}
+.lightable-material tfoot tr td {
+border: 0;
+}
+.lightable-material tfoot tr:first-child td {
+border-top: 1px solid #EEE;
+}
+.lightable-material th {
+height: 56px;
+padding-left: 16px;
+padding-right: 16px;
+}
+.lightable-material td {
+height: 52px;
+padding-left: 16px;
+padding-right: 16px;
+border-top: 1px solid #eeeeee;
+}
+.lightable-material.lightable-hover tbody tr:hover {
+background-color: #f5f5f5;
+}
+.lightable-material.lightable-striped tbody tr:nth-child(even) {
+background-color: #f5f5f5;
+}
+.lightable-material.lightable-striped tbody td {
+border: 0;
+}
+.lightable-material.lightable-striped thead tr:last-child th {
+border-bottom: 1px solid #ddd;
+}
+.lightable-material-dark {
+min-width: 100%;
+white-space: nowrap;
+table-layout: fixed;
+font-family: Roboto, sans-serif;
+border: 1px solid #FFFFFF12;
+border-collapse: collapse;
+margin-bottom: 10px;
+background-color: #363640;
+}
+.lightable-material-dark tfoot tr td {
+border: 0;
+}
+.lightable-material-dark tfoot tr:first-child td {
+border-top: 1px solid #FFFFFF12;
+}
+.lightable-material-dark th {
+height: 56px;
+padding-left: 16px;
+padding-right: 16px;
+color: #FFFFFF60;
+}
+.lightable-material-dark td {
+height: 52px;
+padding-left: 16px;
+padding-right: 16px;
+color: #FFFFFF;
+border-top: 1px solid #FFFFFF12;
+}
+.lightable-material-dark.lightable-hover tbody tr:hover {
+background-color: #FFFFFF12;
+}
+.lightable-material-dark.lightable-striped tbody tr:nth-child(even) {
+background-color: #FFFFFF12;
+}
+.lightable-material-dark.lightable-striped tbody td {
+border: 0;
+}
+.lightable-material-dark.lightable-striped thead tr:last-child th {
+border-bottom: 1px solid #FFFFFF12;
+}
+.lightable-paper {
+width: 100%;
+margin-bottom: 10px;
+color: #444;
+}
+.lightable-paper tfoot tr td {
+border: 0;
+}
+.lightable-paper tfoot tr:first-child td {
+border-top: 1px solid #00000020;
+}
+.lightable-paper thead tr:last-child th {
+color: #666;
+vertical-align: bottom;
+border-bottom: 1px solid #00000020;
+line-height: 1.15em;
+padding: 10px 5px;
+}
+.lightable-paper td {
+vertical-align: middle;
+border-bottom: 1px solid #00000010;
+line-height: 1.15em;
+padding: 7px 5px;
+}
+.lightable-paper.lightable-hover tbody tr:hover {
+background-color: #F9EEC1;
+}
+.lightable-paper.lightable-striped tbody tr:nth-child(even) {
+background-color: #00000008;
+}
+.lightable-paper.lightable-striped tbody td {
+border: 0;
+}
+</style>
+
+<style type="text/css">
+code{white-space: pre-wrap;}
+span.smallcaps{font-variant: small-caps;}
+span.underline{text-decoration: underline;}
+div.column{display: inline-block; vertical-align: top; width: 50%;}
+div.hanging-indent{margin-left: 1.5em; text-indent: -1.5em;}
+ul.task-list{list-style: none;}
+</style>
+
+
+
+<style type="text/css">
+code {
+white-space: pre;
+}
+.sourceCode {
+overflow: visible;
+}
+</style>
+<style type="text/css" data-origin="pandoc">
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+{ counter-reset: source-line 0; }
+pre.numberSource code > span
+{ position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+{ content: counter(source-line);
+position: relative; left: -1em; text-align: right; vertical-align: baseline;
+border: none; display: inline-block;
+-webkit-touch-callout: none; -webkit-user-select: none;
+-khtml-user-select: none; -moz-user-select: none;
+-ms-user-select: none; user-select: none;
+padding: 0 4px; width: 4em;
+color: #aaaaaa;
+}
+pre.numberSource { margin-left: 3em; border-left: 1px solid #aaaaaa; padding-left: 4px; }
+div.sourceCode
+{ }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
+}
+code span.al { color: #ff0000; font-weight: bold; } 
+code span.an { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.at { color: #7d9029; } 
+code span.bn { color: #40a070; } 
+code span.bu { color: #008000; } 
+code span.cf { color: #007020; font-weight: bold; } 
+code span.ch { color: #4070a0; } 
+code span.cn { color: #880000; } 
+code span.co { color: #60a0b0; font-style: italic; } 
+code span.cv { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.do { color: #ba2121; font-style: italic; } 
+code span.dt { color: #902000; } 
+code span.dv { color: #40a070; } 
+code span.er { color: #ff0000; font-weight: bold; } 
+code span.ex { } 
+code span.fl { color: #40a070; } 
+code span.fu { color: #06287e; } 
+code span.im { color: #008000; font-weight: bold; } 
+code span.in { color: #60a0b0; font-weight: bold; font-style: italic; } 
+code span.kw { color: #007020; font-weight: bold; } 
+code span.op { color: #666666; } 
+code span.ot { color: #007020; } 
+code span.pp { color: #bc7a00; } 
+code span.sc { color: #4070a0; } 
+code span.ss { color: #bb6688; } 
+code span.st { color: #4070a0; } 
+code span.va { color: #19177c; } 
+code span.vs { color: #4070a0; } 
+code span.wa { color: #60a0b0; font-weight: bold; font-style: italic; } 
+</style>
+<script>
+// apply pandoc div.sourceCode style to pre.sourceCode instead
+(function() {
+  var sheets = document.styleSheets;
+  for (var i = 0; i < sheets.length; i++) {
+    if (sheets[i].ownerNode.dataset["origin"] !== "pandoc") continue;
+    try { var rules = sheets[i].cssRules; } catch (e) { continue; }
+    var j = 0;
+    while (j < rules.length) {
+      var rule = rules[j];
+      // check if there is a div.sourceCode rule
+      if (rule.type !== rule.STYLE_RULE || rule.selectorText !== "div.sourceCode") {
+        j++;
+        continue;
+      }
+      var style = rule.style.cssText;
+      // check if color or background-color is set
+      if (rule.style.color === '' && rule.style.backgroundColor === '') {
+        j++;
+        continue;
+      }
+      // replace div.sourceCode by a pre.sourceCode rule
+      sheets[i].deleteRule(j);
+      sheets[i].insertRule('pre.sourceCode{' + style + '}', j);
+    }
+  }
+})();
+</script>
+
+
+
+
+<style type="text/css">body {
+background-color: #fff;
+margin: 1em auto;
+max-width: 700px;
+overflow: visible;
+padding-left: 2em;
+padding-right: 2em;
+font-family: "Open Sans", "Helvetica Neue", Helvetica, Arial, sans-serif;
+font-size: 14px;
+line-height: 1.35;
+}
+#TOC {
+clear: both;
+margin: 0 0 10px 10px;
+padding: 4px;
+width: 400px;
+border: 1px solid #CCCCCC;
+border-radius: 5px;
+background-color: #f6f6f6;
+font-size: 13px;
+line-height: 1.3;
+}
+#TOC .toctitle {
+font-weight: bold;
+font-size: 15px;
+margin-left: 5px;
+}
+#TOC ul {
+padding-left: 40px;
+margin-left: -1.5em;
+margin-top: 5px;
+margin-bottom: 5px;
+}
+#TOC ul ul {
+margin-left: -2em;
+}
+#TOC li {
+line-height: 16px;
+}
+table {
+margin: 1em auto;
+border-width: 1px;
+border-color: #DDDDDD;
+border-style: outset;
+border-collapse: collapse;
+}
+table th {
+border-width: 2px;
+padding: 5px;
+border-style: inset;
+}
+table td {
+border-width: 1px;
+border-style: inset;
+line-height: 18px;
+padding: 5px 5px;
+}
+table, table th, table td {
+border-left-style: none;
+border-right-style: none;
+}
+table thead, table tr.even {
+background-color: #f7f7f7;
+}
+p {
+margin: 0.5em 0;
+}
+blockquote {
+background-color: #f6f6f6;
+padding: 0.25em 0.75em;
+}
+hr {
+border-style: solid;
+border: none;
+border-top: 1px solid #777;
+margin: 28px 0;
+}
+dl {
+margin-left: 0;
+}
+dl dd {
+margin-bottom: 13px;
+margin-left: 13px;
+}
+dl dt {
+font-weight: bold;
+}
+ul {
+margin-top: 0;
+}
+ul li {
+list-style: circle outside;
+}
+ul ul {
+margin-bottom: 0;
+}
+pre, code {
+background-color: #f7f7f7;
+border-radius: 3px;
+color: #333;
+white-space: pre-wrap; 
+}
+pre {
+border-radius: 3px;
+margin: 5px 0px 10px 0px;
+padding: 10px;
+}
+pre:not([class]) {
+background-color: #f7f7f7;
+}
+code {
+font-family: Consolas, Monaco, 'Courier New', monospace;
+font-size: 85%;
+}
+p > code, li > code {
+padding: 2px 0px;
+}
+div.figure {
+text-align: center;
+}
+img {
+background-color: #FFFFFF;
+padding: 2px;
+border: 1px solid #DDDDDD;
+border-radius: 3px;
+border: 1px solid #CCCCCC;
+margin: 0 5px;
+}
+h1 {
+margin-top: 0;
+font-size: 35px;
+line-height: 40px;
+}
+h2 {
+border-bottom: 4px solid #f7f7f7;
+padding-top: 10px;
+padding-bottom: 2px;
+font-size: 145%;
+}
+h3 {
+border-bottom: 2px solid #f7f7f7;
+padding-top: 10px;
+font-size: 120%;
+}
+h4 {
+border-bottom: 1px solid #f7f7f7;
+margin-left: 8px;
+font-size: 105%;
+}
+h5, h6 {
+border-bottom: 1px solid #ccc;
+font-size: 105%;
+}
+a {
+color: #0033dd;
+text-decoration: none;
+}
+a:hover {
+color: #6666ff; }
+a:visited {
+color: #800080; }
+a:visited:hover {
+color: #BB00BB; }
+a[href^="http:"] {
+text-decoration: underline; }
+a[href^="https:"] {
+text-decoration: underline; }
+
+code > span.kw { color: #555; font-weight: bold; } 
+code > span.dt { color: #902000; } 
+code > span.dv { color: #40a070; } 
+code > span.bn { color: #d14; } 
+code > span.fl { color: #d14; } 
+code > span.ch { color: #d14; } 
+code > span.st { color: #d14; } 
+code > span.co { color: #888888; font-style: italic; } 
+code > span.ot { color: #007020; } 
+code > span.al { color: #ff0000; font-weight: bold; } 
+code > span.fu { color: #900; font-weight: bold; } 
+code > span.er { color: #a61717; background-color: #e3d2d2; } 
+</style>
+
+
+
+
+</head>
+
+<body>
+
+
+
+
+<h1 class="title toc-ignore">Excess count detection for epidemiological
+time series</h1>
+<h4 class="author">Benedikt Zacher</h4>
+<h4 class="date">2025-05-27</h4>
+
+
+
+<p><strong>Ex</strong>cess <strong>c</strong>ount
+<strong>de</strong>tection (<em>excode</em>) in epidemiological time
+series is an important part of public health surveillance systems. A
+variety of algorithms has been developed to identify events such as
+disease outbreaks or excess mortality. To this end, time series are
+analysed to detect unusually large (case) counts, that exceed what is
+normally expected in a certain time period and geographical region. The
+normal expectancy of cases in a current time period is usually
+calculated based on historic data. Depending on the time series of
+interest, the following features need to be taken into account by a
+model:</p>
+<ul>
+<li><strong>Seasonal patterns:</strong> Many epidemiological times
+series that are of public health interest show periodic changes in cases
+depending on seasons or other calendar periods.</li>
+<li><strong>Long-term time trends:</strong> The time series may show a
+long-term increase or decrease in case counts.</li>
+<li><strong>Historic events:</strong> Events such as disease outbreaks
+may have caused an excess of case counts in historic data that is used
+for model estimation. This needs to be considered to avoid
+overestimation of the normal expectancy for the current time
+period.</li>
+</ul>
+<p>The <em>excode</em> package provides a flexible framework that
+implements well established approaches to control for seasonality,
+long-term trends and historic events, but also allows the use of
+customized models. The user can choose between the Poisson and the
+Negative Binomial distribution, which are the most commonly used
+probability distributions for modeling count data. By combining hidden
+Markov models and generalized linear models, <em>excode</em> explicitly
+models normally expected case counts <em>and</em> expected excess case
+counts, i.e. each time point in a time series is labeled either as a
+normal state or as an excess state. A short overview of the statistical
+model used can be found at the end of this document.</p>
+<div id="overwiew-of-available-models-in-excode" class="section level2">
+<h2>Overwiew of available models in <em>excode</em></h2>
+<p>There are five different model classes implemented in
+<em>excode</em>:</p>
+<ul>
+<li><strong>Mean:</strong> This model does not account for seasonal or
+cyclical patterns. The expectancy of normal and excess case counts is
+modeled as the mean of the historic data.</li>
+<li><strong>FarringtonNoufaily:</strong> This is a popular algorithm,
+which models seasonality by segmenting a year into a predefined number
+of shorter time periods, where each has a different expectancy of
+observed cases. It also allows integration of a long-term time
+trend.</li>
+<li><strong>Harmonic:</strong> The ‘Harmonic’ model uses sine and cosine
+function to account for seasonal or cyclical patterns in the data. It
+also allows integration of long-term time trends.</li>
+<li><strong>Custom:</strong> The ‘Custom’ model allows the user define
+their own model by providing a data frame containing covariate
+data.</li>
+</ul>
+<p>All of the above mentioned models use two states - a ‘normal’ and an
+‘excess’ state - to detect excess counts. However in some cases it might
+be necessary to allow multiple states, such as ‘normal’, ‘low excess’,
+‘medium excess’, ‘high excess’, to account for a wide range of excess
+counts and detect all periods showing an excess in a time series.</p>
+<ul>
+<li><strong>MultiState:</strong> The ‘MultiState’ model allows the use
+of multiple states. The number of states can be specified by the user.
+Like in the ‘Custom’ model, the user must provide covariate data to
+control for possible seasonal or long-term time trends. The use of this
+model is more advanced than the other models and requires some
+additional steps before fitting.</li>
+</ul>
+<p>Figure 1 shows examples for the ‘Mean’, ‘Harmonic’ and
+‘FarringtonNoufaily’ model.</p>
+<div class="figure" style="text-align: center">
+<img src="data:text/html; charset=iso-8859-1;charset=utf-8,%3C%21DOCTYPE%20HTML%20PUBLIC%20%22%2D%2F%2FW3C%2F%2FDTD%20HTML%204%2E01%2F%2FEN%22%20%22http%3A%2F%2Fwww%2Ew3%2Eorg%2FTR%2Fhtml4%2Fstrict%2Edtd%22%3E%0A%3Chtml%3E%0A%3Chead%3E%0A%3Ctitle%3EFatal%20Error%3C%2Ftitle%3E%0A%3Cmeta%20http%2Dequiv%3D%22Content%2DType%22%20content%3D%22text%2Fhtml%3B%20charset%3Diso%2D8859%2D1%22%20%2F%3E%0A%3Cmeta%20http%2Dequiv%3D%22Cache%2DControl%22%20content%3D%22no%2Dcache%22%20%2F%3E%0A%3C%2Fhead%3E%0A%3Cbody%3E%0A%3Clink%20rel%3D%22shortcut%20icon%22%20type%3D%22image%2Fx%2Dicon%22%20href%3D%22%2Fgenua%2Dwwwrelay%2Dinternal%2Ffavicon%2Eico%22%20%2F%3E%0A%3Clink%20rel%3D%22stylesheet%22%20type%3D%22text%2Fcss%22%20href%3D%22%2Fgenua%2Dwwwrelay%2Dinternal%2Fgg%2Ecss%22%20%2F%3E%0A%0A%3Cdiv%3E%0A%20%20%3Cdiv%20id%3D%22header%22%3E%0A%20%20%20%20%3Cdiv%20id%3D%22version%22%3EWWW%20Proxy%3C%2Fdiv%3E%0A%20%20%3C%2Fdiv%3E%0A%20%20%3Cdiv%20id%3D%22page%22%3E%0A%20%20%20%20%3Ch1%3EFatal%20Error%3C%2Fh1%3ECould%20not%20get%20an%20IP%20address%20SERVER%20ERROR%3Cp%3E%0A%20%20%20%20%3Caddress%3EGenerated%20by%20your%20WWW%20Proxy%20%28wwwrelay%29%20on%20fw%2Dberlin%2Ebund%2Ede%3C%2Faddress%3E%0A%20%20%3C%2Fdiv%3E%0A%3C%2Fdiv%3E%0A%3C%2Fbody%3E%0A%3C%2Fhtml%3E%0A%0A" alt="**Figure 1:** Examples for the &#39;Mean&#39;, &#39;Harmonic&#39; and &#39;FarringtonNoufaily&#39; model." />
+<p class="caption">
+<strong>Figure 1:</strong> Examples for the ‘Mean’, ‘Harmonic’ and
+‘FarringtonNoufaily’ model.
+</p>
+</div>
+</div>
+<div id="using-excode-for-excess-count-detection" class="section level2">
+<h2>Using <em>excode</em> for excess count detection</h2>
+<div class="sourceCode" id="cb1"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a><span class="fu">library</span>(excode)</span></code></pre></div>
+<p>The input data is a timeseries containing a date and an observed
+number of cases. It can be a <code>data.frame</code>, an
+<code>sts</code> object from the <a href="https://cran.r-project.org/web/packages/surveillance/index.html">surveillance
+R package</a> or a list of sts objects.</p>
+<p>The input dataset needs to contain the following variables:</p>
+<ul>
+<li><strong>date</strong>: The date of aggregation.<br />
+</li>
+<li><strong>observed</strong>: The observed number of cases.</li>
+<li><strong>id</strong>: The name or id of the time series.</li>
+</ul>
+<p>Optional variables can be:</p>
+<ul>
+<li><strong>offset</strong> (optional): This could be e.g. the
+susceptible population.</li>
+<li><strong>state</strong> (optional): If there are events, such as
+disease outbreaks, that caused excess counts or if there are time
+periods that are known to have normal case counts, these can be
+indicated here (e.g. 0=normal, 1=excess, NA=unknown).</li>
+</ul>
+<p>The example data <code>shadar_df</code> in this section contains the
+number of weekly cases of <em>Salmonella hadar</em> from 2001 until 2006
+in Germany (taken from the <a href="https://cran.r-project.org/web/packages/surveillance/index.html">surveillance
+package</a>). This dataset does not contain an <strong>offset</strong>
+and <strong>state</strong> variable as we do not adjust for population
+size and the true disease outbreak labels are not included.</p>
+<div class="sourceCode" id="cb2"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb2-1"><a href="#cb2-1" tabindex="-1"></a><span class="do">## Load data an show first 6 rows</span></span>
+<span id="cb2-2"><a href="#cb2-2" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;shadar_df&quot;</span>)</span>
+<span id="cb2-3"><a href="#cb2-3" tabindex="-1"></a><span class="fu">kable</span>(<span class="fu">as_tibble</span>(shadar_df[<span class="dv">1</span><span class="sc">:</span><span class="dv">6</span>, ])) <span class="sc">%&gt;%</span></span>
+<span id="cb2-4"><a href="#cb2-4" tabindex="-1"></a>  <span class="fu">kable_styling</span>(<span class="at">font_size =</span> <span class="dv">11</span>)</span></code></pre></div>
+<table class="table" style="font-size: 11px; margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;">
+date
+</th>
+<th style="text-align:right;">
+observed
+</th>
+<th style="text-align:left;">
+id
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+2001-01-08
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:left;">
+S. Hadar Germany
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2001-01-15
+</td>
+<td style="text-align:right;">
+6
+</td>
+<td style="text-align:left;">
+S. Hadar Germany
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2001-01-22
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:left;">
+S. Hadar Germany
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2001-01-29
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:left;">
+S. Hadar Germany
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2001-02-05
+</td>
+<td style="text-align:right;">
+15
+</td>
+<td style="text-align:left;">
+S. Hadar Germany
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2001-02-12
+</td>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:left;">
+S. Hadar Germany
+</td>
+</tr>
+</tbody>
+</table>
+<p>Figure 2 shows that there is a cyclical pattern of case counts, with
+more cases during the summer and fewer cases cases during the winter
+There is also a decrease of reported cases over the years, except for
+the year 2006, <a href="https://www.rki.de/DE/Content/Infekt/EpidBull/Archiv/2006/Ausgabenlinks/31_06.pdf?__blob=publicationFile">where
+an outbreak lead to a surge in case numbers compared to previous
+years</a>.</p>
+<div class="sourceCode" id="cb3"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb3-1"><a href="#cb3-1" tabindex="-1"></a><span class="co"># Plot the time series</span></span>
+<span id="cb3-2"><a href="#cb3-2" tabindex="-1"></a><span class="fu">ggplot</span>(shadar_df, <span class="fu">aes</span>(<span class="at">x =</span> date, <span class="at">y =</span> observed)) <span class="sc">+</span></span>
+<span id="cb3-3"><a href="#cb3-3" tabindex="-1"></a>  <span class="fu">geom_col</span>(<span class="at">color =</span> <span class="st">&quot;grey&quot;</span>, <span class="at">fill =</span> <span class="st">&quot;lightgrey&quot;</span>) <span class="sc">+</span></span>
+<span id="cb3-4"><a href="#cb3-4" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb3-5"><a href="#cb3-5" tabindex="-1"></a>  <span class="fu">ylab</span>(<span class="st">&quot;No. of cases&quot;</span>) <span class="sc">+</span></span>
+<span id="cb3-6"><a href="#cb3-6" tabindex="-1"></a>  <span class="fu">xlab</span>(<span class="st">&quot;Week of notification&quot;</span>) <span class="sc">+</span></span>
+<span id="cb3-7"><a href="#cb3-7" tabindex="-1"></a>  <span class="fu">scale_x_date</span>(<span class="at">date_labels =</span> <span class="st">&quot;%Y&quot;</span>, <span class="at">date_breaks =</span> <span class="st">&quot;year&quot;</span>)</span></code></pre></div>
+<div class="figure" style="text-align: center">
+<img src="data:text/html; charset=iso-8859-1;charset=utf-8,%3C%21DOCTYPE%20HTML%20PUBLIC%20%22%2D%2F%2FW3C%2F%2FDTD%20HTML%204%2E01%2F%2FEN%22%20%22http%3A%2F%2Fwww%2Ew3%2Eorg%2FTR%2Fhtml4%2Fstrict%2Edtd%22%3E%0A%3Chtml%3E%0A%3Chead%3E%0A%3Ctitle%3EFatal%20Error%3C%2Ftitle%3E%0A%3Cmeta%20http%2Dequiv%3D%22Content%2DType%22%20content%3D%22text%2Fhtml%3B%20charset%3Diso%2D8859%2D1%22%20%2F%3E%0A%3Cmeta%20http%2Dequiv%3D%22Cache%2DControl%22%20content%3D%22no%2Dcache%22%20%2F%3E%0A%3C%2Fhead%3E%0A%3Cbody%3E%0A%3Clink%20rel%3D%22shortcut%20icon%22%20type%3D%22image%2Fx%2Dicon%22%20href%3D%22%2Fgenua%2Dwwwrelay%2Dinternal%2Ffavicon%2Eico%22%20%2F%3E%0A%3Clink%20rel%3D%22stylesheet%22%20type%3D%22text%2Fcss%22%20href%3D%22%2Fgenua%2Dwwwrelay%2Dinternal%2Fgg%2Ecss%22%20%2F%3E%0A%0A%3Cdiv%3E%0A%20%20%3Cdiv%20id%3D%22header%22%3E%0A%20%20%20%20%3Cdiv%20id%3D%22version%22%3EWWW%20Proxy%3C%2Fdiv%3E%0A%20%20%3C%2Fdiv%3E%0A%20%20%3Cdiv%20id%3D%22page%22%3E%0A%20%20%20%20%3Ch1%3EFatal%20Error%3C%2Fh1%3ECould%20not%20get%20an%20IP%20address%20SERVER%20ERROR%3Cp%3E%0A%20%20%20%20%3Caddress%3EGenerated%20by%20your%20WWW%20Proxy%20%28wwwrelay%29%20on%20fw%2Dberlin%2Ebund%2Ede%3C%2Faddress%3E%0A%20%20%3C%2Fdiv%3E%0A%3C%2Fdiv%3E%0A%3C%2Fbody%3E%0A%3C%2Fhtml%3E%0A%0A" alt="**Figure 2:** Weekly *Salmonella Newport* cases." />
+<p class="caption">
+<strong>Figure 2:</strong> Weekly <em>Salmonella Newport</em> cases.
+</p>
+</div>
+<p>Before running the excess count detection, the user needs to decide
+which probability distribution and which model should be used. This is
+done using the <code>excodeFamily</code> and <code>excodeFormula</code>
+objects of the <em>excode</em> package. Both are then combined into an
+<code>excodeModel</code> object, which stores all necessary parameters
+and specifications for model fitting. In this example, the ‘Poisson’
+distribution and - due to the cyclical and long-term time trend - the
+‘Harmonic’ model is chosen.</p>
+<div class="sourceCode" id="cb4"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb4-1"><a href="#cb4-1" tabindex="-1"></a><span class="co"># Use a &#39;Poisson&#39; distribution in excodeFamily</span></span>
+<span id="cb4-2"><a href="#cb4-2" tabindex="-1"></a>excode_family_pois <span class="ot">&lt;-</span> <span class="fu">excodeFamily</span>(<span class="st">&quot;Poisson&quot;</span>)</span>
+<span id="cb4-3"><a href="#cb4-3" tabindex="-1"></a><span class="co"># Define the &#39;Harmonic&#39; model in excodeFormula</span></span>
+<span id="cb4-4"><a href="#cb4-4" tabindex="-1"></a>excode_formula_har <span class="ot">&lt;-</span> <span class="fu">excodeFormula</span>(<span class="st">&quot;Harmonic&quot;</span>)</span>
+<span id="cb4-5"><a href="#cb4-5" tabindex="-1"></a><span class="co"># Combine both in the final excodeModel object</span></span>
+<span id="cb4-6"><a href="#cb4-6" tabindex="-1"></a>excode_har_pois <span class="ot">&lt;-</span> <span class="fu">excodeModel</span>(</span>
+<span id="cb4-7"><a href="#cb4-7" tabindex="-1"></a>  excode_family_pois,</span>
+<span id="cb4-8"><a href="#cb4-8" tabindex="-1"></a>  excode_formula_har</span>
+<span id="cb4-9"><a href="#cb4-9" tabindex="-1"></a>)</span></code></pre></div>
+<p>Printing <code>excode_har_pois</code> gives some basic information
+about the model specifcations and shows that the model is an inital
+model, which stores results for 0 time points:</p>
+<div class="sourceCode" id="cb5"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb5-1"><a href="#cb5-1" tabindex="-1"></a>excode_har_pois</span></code></pre></div>
+<pre><code>## Inital excodeModel
+##  excodeFamily: Poisson
+##  excodeFormula: Harmonic
+## No. of timepoints: 0</code></pre>
+<p>The <code>run_excode()</code> function then performs the excess count
+detection. This function accepts different data types for the
+surveillance timeseries (sts, data.frame, list of sts objects). The
+output is a fitted <code>excodeModel</code> object -
+<code>result_shadar_har</code> - that stores results for 87 time
+points.</p>
+<div class="sourceCode" id="cb7"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb7-1"><a href="#cb7-1" tabindex="-1"></a><span class="co"># Run excode on time points 209-295</span></span>
+<span id="cb7-2"><a href="#cb7-2" tabindex="-1"></a>result_shadar_har <span class="ot">&lt;-</span> <span class="fu">run_excode</span>(</span>
+<span id="cb7-3"><a href="#cb7-3" tabindex="-1"></a>  shadar_df,</span>
+<span id="cb7-4"><a href="#cb7-4" tabindex="-1"></a>  excode_har_pois,</span>
+<span id="cb7-5"><a href="#cb7-5" tabindex="-1"></a>  <span class="dv">209</span><span class="sc">:</span><span class="dv">295</span></span>
+<span id="cb7-6"><a href="#cb7-6" tabindex="-1"></a>)</span>
+<span id="cb7-7"><a href="#cb7-7" tabindex="-1"></a></span>
+<span id="cb7-8"><a href="#cb7-8" tabindex="-1"></a>result_shadar_har</span></code></pre></div>
+<pre><code>## Fitted excodeModel
+##  excodeFamily: Poisson
+##  excodeFormula: Harmonic
+## No. of timepoints: 87</code></pre>
+<p>Results can be extracted using the <code>summary()</code>
+function:</p>
+<div class="sourceCode" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" tabindex="-1"></a>summary_shadar_har <span class="ot">&lt;-</span> <span class="fu">summary</span>(result_shadar_har)</span>
+<span id="cb9-2"><a href="#cb9-2" tabindex="-1"></a><span class="fu">kable</span>(<span class="fu">as_tibble</span>(summary_shadar_har[<span class="dv">82</span><span class="sc">:</span><span class="dv">87</span>, ])) <span class="sc">%&gt;%</span></span>
+<span id="cb9-3"><a href="#cb9-3" tabindex="-1"></a>  <span class="fu">kable_styling</span>(<span class="at">font_size =</span> <span class="dv">11</span>)</span></code></pre></div>
+<table class="table" style="font-size: 11px; margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:right;">
+posterior
+</th>
+<th style="text-align:right;">
+pval
+</th>
+<th style="text-align:left;">
+date
+</th>
+<th style="text-align:right;">
+timepoint
+</th>
+<th style="text-align:right;">
+observed
+</th>
+<th style="text-align:right;">
+mu0
+</th>
+<th style="text-align:right;">
+mu1
+</th>
+<th style="text-align:left;">
+id
+</th>
+<th style="text-align:right;">
+BIC
+</th>
+<th style="text-align:right;">
+AIC
+</th>
+<th style="text-align:right;">
+posterior_ub
+</th>
+<th style="text-align:right;">
+pval_ub
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right;">
+0.993
+</td>
+<td style="text-align:right;">
+0.002
+</td>
+<td style="text-align:left;">
+2006-07-24
+</td>
+<td style="text-align:right;">
+290
+</td>
+<td style="text-align:right;">
+10
+</td>
+<td style="text-align:right;">
+3.27
+</td>
+<td style="text-align:right;">
+11.1
+</td>
+<td style="text-align:left;">
+S. Hadar Germany
+</td>
+<td style="text-align:right;">
+1095
+</td>
+<td style="text-align:right;">
+1012
+</td>
+<td style="text-align:right;">
+7
+</td>
+<td style="text-align:right;">
+8
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+1.000
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:left;">
+2006-07-31
+</td>
+<td style="text-align:right;">
+291
+</td>
+<td style="text-align:right;">
+16
+</td>
+<td style="text-align:right;">
+3.32
+</td>
+<td style="text-align:right;">
+11.5
+</td>
+<td style="text-align:left;">
+S. Hadar Germany
+</td>
+<td style="text-align:right;">
+1099
+</td>
+<td style="text-align:right;">
+1016
+</td>
+<td style="text-align:right;">
+7
+</td>
+<td style="text-align:right;">
+8
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+1.000
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:left;">
+2006-08-07
+</td>
+<td style="text-align:right;">
+292
+</td>
+<td style="text-align:right;">
+21
+</td>
+<td style="text-align:right;">
+3.39
+</td>
+<td style="text-align:right;">
+12.1
+</td>
+<td style="text-align:left;">
+S. Hadar Germany
+</td>
+<td style="text-align:right;">
+1106
+</td>
+<td style="text-align:right;">
+1023
+</td>
+<td style="text-align:right;">
+7
+</td>
+<td style="text-align:right;">
+8
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+0.929
+</td>
+<td style="text-align:right;">
+0.019
+</td>
+<td style="text-align:left;">
+2006-08-14
+</td>
+<td style="text-align:right;">
+293
+</td>
+<td style="text-align:right;">
+8
+</td>
+<td style="text-align:right;">
+3.27
+</td>
+<td style="text-align:right;">
+11.6
+</td>
+<td style="text-align:left;">
+S. Hadar Germany
+</td>
+<td style="text-align:right;">
+1107
+</td>
+<td style="text-align:right;">
+1024
+</td>
+<td style="text-align:right;">
+7
+</td>
+<td style="text-align:right;">
+8
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+1.000
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:left;">
+2006-08-21
+</td>
+<td style="text-align:right;">
+294
+</td>
+<td style="text-align:right;">
+12
+</td>
+<td style="text-align:right;">
+2.63
+</td>
+<td style="text-align:right;">
+12.7
+</td>
+<td style="text-align:left;">
+S. Hadar Germany
+</td>
+<td style="text-align:right;">
+1103
+</td>
+<td style="text-align:right;">
+1020
+</td>
+<td style="text-align:right;">
+7
+</td>
+<td style="text-align:right;">
+7
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+0.691
+</td>
+<td style="text-align:right;">
+0.049
+</td>
+<td style="text-align:left;">
+2006-08-28
+</td>
+<td style="text-align:right;">
+295
+</td>
+<td style="text-align:right;">
+6
+</td>
+<td style="text-align:right;">
+2.60
+</td>
+<td style="text-align:right;">
+11.8
+</td>
+<td style="text-align:left;">
+S. Hadar Germany
+</td>
+<td style="text-align:right;">
+1107
+</td>
+<td style="text-align:right;">
+1023
+</td>
+<td style="text-align:right;">
+7
+</td>
+<td style="text-align:right;">
+7
+</td>
+</tr>
+</tbody>
+</table>
+<p>The result is a <code>data.frame</code> with the following
+variables:</p>
+<ul>
+<li><strong>posterior:</strong> Probability that there is an excess of
+case counts at the current time point.</li>
+<li><strong>pval:</strong> P-value for the null hypothesis that there is
+no excess at the current timepoint.</li>
+<li><strong>date:</strong> The event date (e.g. reporting date or date
+of disease onset).</li>
+<li><strong>timepoint:</strong> Timepoint (as integer) in the time
+series.</li>
+<li><strong>observed:</strong> Number of cases at the current time
+point.</li>
+<li><strong>mu0:</strong> Number of expected cases under normal
+conditions.</li>
+<li><strong>mu1:</strong> Number of expected cases under excess
+conditions.</li>
+<li><strong>id:</strong> Name of the time series.</li>
+<li><strong>BIC:</strong> Bayesian information criterion.</li>
+<li><strong>AIC:</strong> Aikake information criterion.</li>
+<li><strong>posterior_ub:</strong> A count threshold based on the
+Posterior probability of the model. If the observed counts exceed this
+value, the time point is considered to have excess counts. The default
+probability to calculate this threshold is 0.5 and can be changed via
+the parameter <code>prob_threshold</code> in <code>summary()</code>.
+.</li>
+<li><strong>pval_ub:</strong> A count threshold based on the
+background/normal model. If the observed counts exceed this value, the
+time point is considered to have excess counts. The default p-value to
+calculate this threshold is 0.01 and can be changed via the parameter
+<code>pval_threshold</code> in <code>summary()</code>.</li>
+</ul>
+<p>Figure 3 shows the input data with the estimated alarm thresholds
+(<em>posterior_ub</em> and <em>pval_ub</em>):</p>
+<div class="sourceCode" id="cb10"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb10-1"><a href="#cb10-1" tabindex="-1"></a><span class="fu">ggplot</span>(</span>
+<span id="cb10-2"><a href="#cb10-2" tabindex="-1"></a>  shadar_df <span class="sc">%&gt;%</span> <span class="fu">filter</span>(<span class="fu">year</span>(date) <span class="sc">&gt;=</span> <span class="dv">2003</span>),</span>
+<span id="cb10-3"><a href="#cb10-3" tabindex="-1"></a>  <span class="fu">aes</span>(<span class="at">x =</span> date, <span class="at">y =</span> observed)</span>
+<span id="cb10-4"><a href="#cb10-4" tabindex="-1"></a>) <span class="sc">+</span></span>
+<span id="cb10-5"><a href="#cb10-5" tabindex="-1"></a>  <span class="fu">geom_col</span>(<span class="at">color =</span> <span class="st">&quot;grey&quot;</span>, <span class="at">fill =</span> <span class="st">&quot;lightgrey&quot;</span>) <span class="sc">+</span></span>
+<span id="cb10-6"><a href="#cb10-6" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb10-7"><a href="#cb10-7" tabindex="-1"></a>  <span class="fu">ylab</span>(<span class="st">&quot;No. of cases&quot;</span>) <span class="sc">+</span></span>
+<span id="cb10-8"><a href="#cb10-8" tabindex="-1"></a>  <span class="fu">xlab</span>(<span class="st">&quot;Week of notification&quot;</span>) <span class="sc">+</span></span>
+<span id="cb10-9"><a href="#cb10-9" tabindex="-1"></a>  <span class="fu">scale_x_date</span>(<span class="at">date_labels =</span> <span class="st">&quot;%Y&quot;</span>, <span class="at">date_breaks =</span> <span class="st">&quot;year&quot;</span>) <span class="sc">+</span></span>
+<span id="cb10-10"><a href="#cb10-10" tabindex="-1"></a>  <span class="fu">geom_step</span>(<span class="fu">aes</span>(<span class="at">x =</span> date, <span class="at">y =</span> posterior_ub, <span class="at">color =</span> <span class="st">&quot;upper bound (posterior)&quot;</span>),</span>
+<span id="cb10-11"><a href="#cb10-11" tabindex="-1"></a>    <span class="at">data =</span> summary_shadar_har, <span class="at">linewidth =</span> <span class="dv">1</span></span>
+<span id="cb10-12"><a href="#cb10-12" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb10-13"><a href="#cb10-13" tabindex="-1"></a>  <span class="fu">geom_step</span>(<span class="fu">aes</span>(<span class="at">x =</span> date, <span class="at">y =</span> pval_ub, <span class="at">color =</span> <span class="st">&quot;upper bound (pval)&quot;</span>),</span>
+<span id="cb10-14"><a href="#cb10-14" tabindex="-1"></a>    <span class="at">data =</span> summary_shadar_har, <span class="at">linewidth =</span> <span class="dv">1</span></span>
+<span id="cb10-15"><a href="#cb10-15" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb10-16"><a href="#cb10-16" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">x =</span> date, <span class="at">y =</span> <span class="fu">ifelse</span>(observed <span class="sc">&gt;</span> pval_ub, observed, <span class="cn">NA</span>), <span class="at">color =</span> <span class="st">&quot;Alarm (pval)&quot;</span>),</span>
+<span id="cb10-17"><a href="#cb10-17" tabindex="-1"></a>    <span class="at">data =</span> summary_shadar_har, <span class="at">shape =</span> <span class="dv">3</span></span>
+<span id="cb10-18"><a href="#cb10-18" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb10-19"><a href="#cb10-19" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">x =</span> date, <span class="at">y =</span> <span class="fu">ifelse</span>(observed <span class="sc">&gt;</span> posterior_ub, observed, <span class="cn">NA</span>), <span class="at">color =</span> <span class="st">&quot;Alarm (posterior)&quot;</span>),</span>
+<span id="cb10-20"><a href="#cb10-20" tabindex="-1"></a>    <span class="at">data =</span> summary_shadar_har, <span class="at">shape =</span> <span class="dv">4</span></span>
+<span id="cb10-21"><a href="#cb10-21" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb10-22"><a href="#cb10-22" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">&quot;black&quot;</span>, <span class="st">&quot;black&quot;</span>, <span class="st">&quot;gold&quot;</span>, <span class="st">&quot;tomato&quot;</span>)) <span class="sc">+</span></span>
+<span id="cb10-23"><a href="#cb10-23" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">&quot;top&quot;</span>, <span class="at">legend.title =</span> <span class="fu">element_blank</span>()) <span class="sc">+</span></span>
+<span id="cb10-24"><a href="#cb10-24" tabindex="-1"></a>  <span class="fu">guides</span>(<span class="at">color =</span> <span class="fu">guide_legend</span>(<span class="at">ncol =</span> <span class="dv">2</span>))</span></code></pre></div>
+<div class="figure" style="text-align: center">
+<img src="data:text/html; charset=iso-8859-1;charset=utf-8,%3C%21DOCTYPE%20HTML%20PUBLIC%20%22%2D%2F%2FW3C%2F%2FDTD%20HTML%204%2E01%2F%2FEN%22%20%22http%3A%2F%2Fwww%2Ew3%2Eorg%2FTR%2Fhtml4%2Fstrict%2Edtd%22%3E%0A%3Chtml%3E%0A%3Chead%3E%0A%3Ctitle%3EFatal%20Error%3C%2Ftitle%3E%0A%3Cmeta%20http%2Dequiv%3D%22Content%2DType%22%20content%3D%22text%2Fhtml%3B%20charset%3Diso%2D8859%2D1%22%20%2F%3E%0A%3Cmeta%20http%2Dequiv%3D%22Cache%2DControl%22%20content%3D%22no%2Dcache%22%20%2F%3E%0A%3C%2Fhead%3E%0A%3Cbody%3E%0A%3Clink%20rel%3D%22shortcut%20icon%22%20type%3D%22image%2Fx%2Dicon%22%20href%3D%22%2Fgenua%2Dwwwrelay%2Dinternal%2Ffavicon%2Eico%22%20%2F%3E%0A%3Clink%20rel%3D%22stylesheet%22%20type%3D%22text%2Fcss%22%20href%3D%22%2Fgenua%2Dwwwrelay%2Dinternal%2Fgg%2Ecss%22%20%2F%3E%0A%0A%3Cdiv%3E%0A%20%20%3Cdiv%20id%3D%22header%22%3E%0A%20%20%20%20%3Cdiv%20id%3D%22version%22%3EWWW%20Proxy%3C%2Fdiv%3E%0A%20%20%3C%2Fdiv%3E%0A%20%20%3Cdiv%20id%3D%22page%22%3E%0A%20%20%20%20%3Ch1%3EFatal%20Error%3C%2Fh1%3ECould%20not%20get%20an%20IP%20address%20SERVER%20ERROR%3Cp%3E%0A%20%20%20%20%3Caddress%3EGenerated%20by%20your%20WWW%20Proxy%20%28wwwrelay%29%20on%20fw%2Dberlin%2Ebund%2Ede%3C%2Faddress%3E%0A%20%20%3C%2Fdiv%3E%0A%3C%2Fdiv%3E%0A%3C%2Fbody%3E%0A%3C%2Fhtml%3E%0A%0A" alt="**Figure 3:** Weekly *Salmonella Hadar* cases with alarm thresholds (upper bounds)." />
+<p class="caption">
+<strong>Figure 3:</strong> Weekly <em>Salmonella Hadar</em> cases with
+alarm thresholds (upper bounds).
+</p>
+</div>
+<p>Models ‘Mean’ and ‘FarringtonNoufaily’ can be applied likewise.</p>
+</div>
+<div id="the-custom-model" class="section level2">
+<h2>The ‘Custom’ model</h2>
+<p>The ‘Custom’ model can be used to fit a model with covariate data
+selected by the user. To give an example, data of <a href="https://robert-koch-institut.github.io/SARS-CoV-2-Infektionen_in_Deutschland/">SARS-CoV-2
+infections in Berlin-Neukölln (Germany)</a> from March-July 2020 will be
+used (downloaded on 2024-10-31). Figure 4 shows that after an inital
+peak of infections in late March/early April, the number of infections
+dropped, showing only few cases in May, followed by a rise in June which
+could be attributed to several <a href="https://www.berlin.de/ba-neukoelln/aktuelles/pressemitteilungen/2020/pressemitteilung.950143.php">local
+outbreaks</a>. The daily number of reported SARS-CoV-2 differs over the
+course of a week, showing higher number of cases reported during
+weekdays and lower number of cases during weekends. In the following a
+‘Custom’ <code>excodeModel</code> is used, that models the mean number
+of reported cases during the past 8 weeks on workdays and weekends, to
+detect the observed local outbreaks.</p>
+<p>To define the necessary covariate data for the model, a
+<code>data.frame</code> - <code>weekday</code> - is created, indicating
+whether a current day is a workday or weekend:</p>
+<div class="sourceCode" id="cb11"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb11-1"><a href="#cb11-1" tabindex="-1"></a><span class="fu">data</span>(sarscov2_df)</span>
+<span id="cb11-2"><a href="#cb11-2" tabindex="-1"></a>num_wday <span class="ot">&lt;-</span> <span class="fu">wday</span>(sarscov2_df<span class="sc">$</span>date, <span class="at">week_start =</span> <span class="dv">1</span>)</span>
+<span id="cb11-3"><a href="#cb11-3" tabindex="-1"></a>weekday <span class="ot">&lt;-</span> <span class="fu">data.frame</span>(<span class="at">day =</span> <span class="fu">factor</span>(<span class="fu">ifelse</span>(num_wday <span class="sc">&lt;=</span> <span class="dv">5</span>, <span class="st">&quot;workday&quot;</span>, <span class="st">&quot;weekend&quot;</span>),</span>
+<span id="cb11-4"><a href="#cb11-4" tabindex="-1"></a>  <span class="at">levels =</span> <span class="fu">c</span>(<span class="st">&quot;workday&quot;</span>, <span class="st">&quot;weekend&quot;</span>)</span>
+<span id="cb11-5"><a href="#cb11-5" tabindex="-1"></a>))</span></code></pre></div>
+<p>This is then used to create the ‘Custom’ <code>excodeModel</code>
+object. Note that <code>timepoints_per_unit = 7</code> indicates that
+the repeating time periods are weeks (by default this is 52, i.e. yearly
+periodic data).</p>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb12-1"><a href="#cb12-1" tabindex="-1"></a>excode_formula_custom <span class="ot">&lt;-</span> <span class="fu">excodeFormula</span>(<span class="st">&quot;Custom&quot;</span>, <span class="at">data =</span> weekday, <span class="at">timepoints_per_unit =</span> <span class="dv">7</span>)</span>
+<span id="cb12-2"><a href="#cb12-2" tabindex="-1"></a>excode_custom_pois <span class="ot">&lt;-</span> <span class="fu">excodeModel</span>(</span>
+<span id="cb12-3"><a href="#cb12-3" tabindex="-1"></a>  excode_family_pois,</span>
+<span id="cb12-4"><a href="#cb12-4" tabindex="-1"></a>  excode_formula_custom</span>
+<span id="cb12-5"><a href="#cb12-5" tabindex="-1"></a>)</span></code></pre></div>
+<p>After this, the model is fitted, taking into account 8 weeks of
+historic data (<code>time_units_back = 8</code>) and excluding the past
+two days for fitting
+(<code>past_timepoints_not_included = 2</code>).</p>
+<div class="sourceCode" id="cb13"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb13-1"><a href="#cb13-1" tabindex="-1"></a>result_sarscov2_custom <span class="ot">&lt;-</span> <span class="fu">run_excode</span>(sarscov2_df,</span>
+<span id="cb13-2"><a href="#cb13-2" tabindex="-1"></a>  excode_custom_pois,</span>
+<span id="cb13-3"><a href="#cb13-3" tabindex="-1"></a>  <span class="dv">93</span><span class="sc">:</span><span class="dv">154</span>,</span>
+<span id="cb13-4"><a href="#cb13-4" tabindex="-1"></a>  <span class="at">time_units_back =</span> <span class="dv">8</span>,</span>
+<span id="cb13-5"><a href="#cb13-5" tabindex="-1"></a>  <span class="at">past_timepoints_not_included =</span> <span class="dv">2</span></span>
+<span id="cb13-6"><a href="#cb13-6" tabindex="-1"></a>)</span>
+<span id="cb13-7"><a href="#cb13-7" tabindex="-1"></a>summary_sarscov2_custom <span class="ot">&lt;-</span> <span class="fu">summary</span>(result_sarscov2_custom)</span></code></pre></div>
+<p>The results can be plotted as follows:</p>
+<div class="sourceCode" id="cb14"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb14-1"><a href="#cb14-1" tabindex="-1"></a><span class="fu">ggplot</span>(</span>
+<span id="cb14-2"><a href="#cb14-2" tabindex="-1"></a>  sarscov2_df <span class="sc">%&gt;%</span></span>
+<span id="cb14-3"><a href="#cb14-3" tabindex="-1"></a>    <span class="fu">filter</span>(date <span class="sc">&lt;=</span> <span class="fu">max</span>(summary_sarscov2_custom<span class="sc">$</span>date)),</span>
+<span id="cb14-4"><a href="#cb14-4" tabindex="-1"></a>  <span class="fu">aes</span>(<span class="at">x =</span> date, <span class="at">y =</span> observed)</span>
+<span id="cb14-5"><a href="#cb14-5" tabindex="-1"></a>) <span class="sc">+</span></span>
+<span id="cb14-6"><a href="#cb14-6" tabindex="-1"></a>  <span class="fu">geom_col</span>(<span class="at">color =</span> <span class="st">&quot;grey&quot;</span>, <span class="at">fill =</span> <span class="st">&quot;lightgrey&quot;</span>) <span class="sc">+</span></span>
+<span id="cb14-7"><a href="#cb14-7" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb14-8"><a href="#cb14-8" tabindex="-1"></a>  <span class="fu">ylab</span>(<span class="st">&quot;No. of cases&quot;</span>) <span class="sc">+</span></span>
+<span id="cb14-9"><a href="#cb14-9" tabindex="-1"></a>  <span class="fu">xlab</span>(<span class="st">&quot;Day of reporting&quot;</span>) <span class="sc">+</span></span>
+<span id="cb14-10"><a href="#cb14-10" tabindex="-1"></a>  <span class="fu">scale_x_date</span>(<span class="at">date_labels =</span> <span class="st">&quot;%Y-%m&quot;</span>, <span class="at">date_breaks =</span> <span class="st">&quot;month&quot;</span>) <span class="sc">+</span></span>
+<span id="cb14-11"><a href="#cb14-11" tabindex="-1"></a>  <span class="fu">geom_step</span>(<span class="fu">aes</span>(<span class="at">x =</span> date, <span class="at">y =</span> posterior_ub, <span class="at">color =</span> <span class="st">&quot;upper bound (posterior)&quot;</span>),</span>
+<span id="cb14-12"><a href="#cb14-12" tabindex="-1"></a>    <span class="at">data =</span> summary_sarscov2_custom, <span class="at">linewidth =</span> <span class="dv">1</span></span>
+<span id="cb14-13"><a href="#cb14-13" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb14-14"><a href="#cb14-14" tabindex="-1"></a>  <span class="fu">geom_step</span>(<span class="fu">aes</span>(<span class="at">x =</span> date, <span class="at">y =</span> pval_ub, <span class="at">color =</span> <span class="st">&quot;upper bound (pval)&quot;</span>),</span>
+<span id="cb14-15"><a href="#cb14-15" tabindex="-1"></a>    <span class="at">data =</span> summary_sarscov2_custom, <span class="at">linewidth =</span> <span class="dv">1</span></span>
+<span id="cb14-16"><a href="#cb14-16" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb14-17"><a href="#cb14-17" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">x =</span> date, <span class="at">y =</span> <span class="fu">ifelse</span>(observed <span class="sc">&gt;</span> pval_ub, observed, <span class="cn">NA</span>), <span class="at">color =</span> <span class="st">&quot;Alarm (pval)&quot;</span>),</span>
+<span id="cb14-18"><a href="#cb14-18" tabindex="-1"></a>    <span class="at">data =</span> summary_sarscov2_custom, <span class="at">shape =</span> <span class="dv">3</span></span>
+<span id="cb14-19"><a href="#cb14-19" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb14-20"><a href="#cb14-20" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">x =</span> date, <span class="at">y =</span> <span class="fu">ifelse</span>(observed <span class="sc">&gt;</span> posterior_ub, observed, <span class="cn">NA</span>), <span class="at">color =</span> <span class="st">&quot;Alarm (posterior)&quot;</span>),</span>
+<span id="cb14-21"><a href="#cb14-21" tabindex="-1"></a>    <span class="at">data =</span> summary_sarscov2_custom, <span class="at">shape =</span> <span class="dv">4</span></span>
+<span id="cb14-22"><a href="#cb14-22" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb14-23"><a href="#cb14-23" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">&quot;black&quot;</span>, <span class="st">&quot;black&quot;</span>, <span class="st">&quot;gold&quot;</span>, <span class="st">&quot;tomato&quot;</span>)) <span class="sc">+</span></span>
+<span id="cb14-24"><a href="#cb14-24" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">legend.position =</span> <span class="st">&quot;top&quot;</span>, <span class="at">legend.title =</span> <span class="fu">element_blank</span>()) <span class="sc">+</span></span>
+<span id="cb14-25"><a href="#cb14-25" tabindex="-1"></a>  <span class="fu">guides</span>(<span class="at">color =</span> <span class="fu">guide_legend</span>(<span class="at">ncol =</span> <span class="dv">2</span>))</span></code></pre></div>
+<div class="figure" style="text-align: center">
+<img src="data:text/html; charset=iso-8859-1;charset=utf-8,%3C%21DOCTYPE%20HTML%20PUBLIC%20%22%2D%2F%2FW3C%2F%2FDTD%20HTML%204%2E01%2F%2FEN%22%20%22http%3A%2F%2Fwww%2Ew3%2Eorg%2FTR%2Fhtml4%2Fstrict%2Edtd%22%3E%0A%3Chtml%3E%0A%3Chead%3E%0A%3Ctitle%3EFatal%20Error%3C%2Ftitle%3E%0A%3Cmeta%20http%2Dequiv%3D%22Content%2DType%22%20content%3D%22text%2Fhtml%3B%20charset%3Diso%2D8859%2D1%22%20%2F%3E%0A%3Cmeta%20http%2Dequiv%3D%22Cache%2DControl%22%20content%3D%22no%2Dcache%22%20%2F%3E%0A%3C%2Fhead%3E%0A%3Cbody%3E%0A%3Clink%20rel%3D%22shortcut%20icon%22%20type%3D%22image%2Fx%2Dicon%22%20href%3D%22%2Fgenua%2Dwwwrelay%2Dinternal%2Ffavicon%2Eico%22%20%2F%3E%0A%3Clink%20rel%3D%22stylesheet%22%20type%3D%22text%2Fcss%22%20href%3D%22%2Fgenua%2Dwwwrelay%2Dinternal%2Fgg%2Ecss%22%20%2F%3E%0A%0A%3Cdiv%3E%0A%20%20%3Cdiv%20id%3D%22header%22%3E%0A%20%20%20%20%3Cdiv%20id%3D%22version%22%3EWWW%20Proxy%3C%2Fdiv%3E%0A%20%20%3C%2Fdiv%3E%0A%20%20%3Cdiv%20id%3D%22page%22%3E%0A%20%20%20%20%3Ch1%3EFatal%20Error%3C%2Fh1%3ECould%20not%20get%20an%20IP%20address%20SERVER%20ERROR%3Cp%3E%0A%20%20%20%20%3Caddress%3EGenerated%20by%20your%20WWW%20Proxy%20%28wwwrelay%29%20on%20fw%2Dberlin%2Ebund%2Ede%3C%2Faddress%3E%0A%20%20%3C%2Fdiv%3E%0A%3C%2Fdiv%3E%0A%3C%2Fbody%3E%0A%3C%2Fhtml%3E%0A%0A" alt="**Figure 4:** Daily reported SARS-CoV-2 infections in Berlin-Neukölln with alarm thresholds (upper bounds)." />
+<p class="caption">
+<strong>Figure 4:</strong> Daily reported SARS-CoV-2 infections in
+Berlin-Neukölln with alarm thresholds (upper bounds).
+</p>
+</div>
+</div>
+<div id="the-multistate-model" class="section level2">
+<h2>The ‘MultiState’ model</h2>
+<p>The ‘MultiState’ model allows multiple states, which can be necessary
+if the use of only one excess state is not sufficient to model the data.
+This can be the case when the range of excess counts is very large. To
+illustrate application of the ‘MultiState’ model, weekly all-cause
+mortality data reported to the <a href="https://www.destatis.de/DE/Themen/Gesellschaft-Umwelt/Bevoelkerung/Sterbefaelle-Lebenserwartung/sterbefallzahlen.html">German
+Federal Statistical Office</a> is used (Figure 5). The ‘MultiState’
+model with four states is applied to detect weeks with excess mortality
+in the time series.</p>
+<div class="sourceCode" id="cb15"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb15-1"><a href="#cb15-1" tabindex="-1"></a><span class="fu">data</span>(<span class="st">&quot;mort_df_germany&quot;</span>)</span>
+<span id="cb15-2"><a href="#cb15-2" tabindex="-1"></a></span>
+<span id="cb15-3"><a href="#cb15-3" tabindex="-1"></a><span class="fu">ggplot</span>(mort_df_germany) <span class="sc">+</span></span>
+<span id="cb15-4"><a href="#cb15-4" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x =</span> date, <span class="at">y =</span> observed), <span class="at">linewidth =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb15-5"><a href="#cb15-5" tabindex="-1"></a>  <span class="fu">theme_minimal</span>() <span class="sc">+</span></span>
+<span id="cb15-6"><a href="#cb15-6" tabindex="-1"></a>  <span class="fu">ylab</span>(<span class="st">&quot;Number of deaths&quot;</span>) <span class="sc">+</span></span>
+<span id="cb15-7"><a href="#cb15-7" tabindex="-1"></a>  <span class="fu">xlab</span>(<span class="st">&quot;Week of death&quot;</span>)</span></code></pre></div>
+<div class="figure" style="text-align: center">
+<img src="data:text/html; charset=iso-8859-1;charset=utf-8,%3C%21DOCTYPE%20HTML%20PUBLIC%20%22%2D%2F%2FW3C%2F%2FDTD%20HTML%204%2E01%2F%2FEN%22%20%22http%3A%2F%2Fwww%2Ew3%2Eorg%2FTR%2Fhtml4%2Fstrict%2Edtd%22%3E%0A%3Chtml%3E%0A%3Chead%3E%0A%3Ctitle%3EFatal%20Error%3C%2Ftitle%3E%0A%3Cmeta%20http%2Dequiv%3D%22Content%2DType%22%20content%3D%22text%2Fhtml%3B%20charset%3Diso%2D8859%2D1%22%20%2F%3E%0A%3Cmeta%20http%2Dequiv%3D%22Cache%2DControl%22%20content%3D%22no%2Dcache%22%20%2F%3E%0A%3C%2Fhead%3E%0A%3Cbody%3E%0A%3Clink%20rel%3D%22shortcut%20icon%22%20type%3D%22image%2Fx%2Dicon%22%20href%3D%22%2Fgenua%2Dwwwrelay%2Dinternal%2Ffavicon%2Eico%22%20%2F%3E%0A%3Clink%20rel%3D%22stylesheet%22%20type%3D%22text%2Fcss%22%20href%3D%22%2Fgenua%2Dwwwrelay%2Dinternal%2Fgg%2Ecss%22%20%2F%3E%0A%0A%3Cdiv%3E%0A%20%20%3Cdiv%20id%3D%22header%22%3E%0A%20%20%20%20%3Cdiv%20id%3D%22version%22%3EWWW%20Proxy%3C%2Fdiv%3E%0A%20%20%3C%2Fdiv%3E%0A%20%20%3Cdiv%20id%3D%22page%22%3E%0A%20%20%20%20%3Ch1%3EFatal%20Error%3C%2Fh1%3ECould%20not%20get%20an%20IP%20address%20SERVER%20ERROR%3Cp%3E%0A%20%20%20%20%3Caddress%3EGenerated%20by%20your%20WWW%20Proxy%20%28wwwrelay%29%20on%20fw%2Dberlin%2Ebund%2Ede%3C%2Faddress%3E%0A%20%20%3C%2Fdiv%3E%0A%3C%2Fdiv%3E%0A%3C%2Fbody%3E%0A%3C%2Fhtml%3E%0A%0A" alt="**Figure 5:** Weekly all-cause mortaility in Germany." />
+<p class="caption">
+<strong>Figure 5:</strong> Weekly all-cause mortaility in Germany.
+</p>
+</div>
+<div id="initialization-of-the-multistate-model" class="section level3">
+<h3>Initialization of the ‘MultiState’ model</h3>
+<p>For models with only two states, <em>excode</em> automatically
+initializes and fits the model. However, when using multiple states,
+initialization of the GLM part of the model needs to be done manually.
+In order to do so, initial estimates for the expected number of cases
+for each state need to be provided. First the baseline number of deaths
+is estimated, which roughly follows the <a href="https://www.euromomo.eu/graphs-and-maps">EuroMOMO</a> protocol.
+The baseline fit uses sine and cosine functions to control for
+seasonality as well as a linear time trend. To avoid overestimation of
+the expected background mortality, only weeks 15 to 26 (spring) and 36
+to 45 (autumn) are included to estimate the background model, since
+these are time periods where no excess mortality is expected. All
+necessary variables are stored in <code>mort_df_germany</code>:</p>
+<div class="sourceCode" id="cb16"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb16-1"><a href="#cb16-1" tabindex="-1"></a><span class="fu">kable</span>(<span class="fu">as_tibble</span>(mort_df_germany[<span class="dv">1</span><span class="sc">:</span><span class="dv">6</span>, ])) <span class="sc">%&gt;%</span></span>
+<span id="cb16-2"><a href="#cb16-2" tabindex="-1"></a>  <span class="fu">kable_styling</span>(<span class="at">font_size =</span> <span class="dv">11</span>)</span></code></pre></div>
+<table class="table" style="font-size: 11px; margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:left;">
+date
+</th>
+<th style="text-align:right;">
+observed
+</th>
+<th style="text-align:left;">
+id
+</th>
+<th style="text-align:right;">
+timepoint
+</th>
+<th style="text-align:right;">
+sin52
+</th>
+<th style="text-align:right;">
+cos52
+</th>
+<th style="text-align:left;">
+bckg_week
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:left;">
+2016-01-03
+</td>
+<td style="text-align:right;">
+17222
+</td>
+<td style="text-align:left;">
+All cause mortality Germany
+</td>
+<td style="text-align:right;">
+0
+</td>
+<td style="text-align:right;">
+0.000
+</td>
+<td style="text-align:right;">
+1.000
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2016-01-10
+</td>
+<td style="text-align:right;">
+18469
+</td>
+<td style="text-align:left;">
+All cause mortality Germany
+</td>
+<td style="text-align:right;">
+1
+</td>
+<td style="text-align:right;">
+0.121
+</td>
+<td style="text-align:right;">
+0.993
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2016-01-17
+</td>
+<td style="text-align:right;">
+18440
+</td>
+<td style="text-align:left;">
+All cause mortality Germany
+</td>
+<td style="text-align:right;">
+2
+</td>
+<td style="text-align:right;">
+0.239
+</td>
+<td style="text-align:right;">
+0.971
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2016-01-24
+</td>
+<td style="text-align:right;">
+18627
+</td>
+<td style="text-align:left;">
+All cause mortality Germany
+</td>
+<td style="text-align:right;">
+3
+</td>
+<td style="text-align:right;">
+0.355
+</td>
+<td style="text-align:right;">
+0.935
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2016-01-31
+</td>
+<td style="text-align:right;">
+18707
+</td>
+<td style="text-align:left;">
+All cause mortality Germany
+</td>
+<td style="text-align:right;">
+4
+</td>
+<td style="text-align:right;">
+0.465
+</td>
+<td style="text-align:right;">
+0.885
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+</tr>
+<tr>
+<td style="text-align:left;">
+2016-02-07
+</td>
+<td style="text-align:right;">
+18493
+</td>
+<td style="text-align:left;">
+All cause mortality Germany
+</td>
+<td style="text-align:right;">
+5
+</td>
+<td style="text-align:right;">
+0.568
+</td>
+<td style="text-align:right;">
+0.823
+</td>
+<td style="text-align:left;">
+FALSE
+</td>
+</tr>
+</tbody>
+</table>
+<p>Using a negative binomial model, the baseline mortality is estimated
+as follows:</p>
+<div class="sourceCode" id="cb17"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb17-1"><a href="#cb17-1" tabindex="-1"></a><span class="co"># Fit background model</span></span>
+<span id="cb17-2"><a href="#cb17-2" tabindex="-1"></a>formula_bckg <span class="ot">&lt;-</span> <span class="st">&quot;observed ~ sin52 + cos52 + timepoint&quot;</span></span>
+<span id="cb17-3"><a href="#cb17-3" tabindex="-1"></a>mort_glm_bckg <span class="ot">&lt;-</span> <span class="fu">glm.nb</span>(formula_bckg, mort_df_germany <span class="sc">%&gt;%</span></span>
+<span id="cb17-4"><a href="#cb17-4" tabindex="-1"></a>  <span class="fu">filter</span>(bckg_week))</span>
+<span id="cb17-5"><a href="#cb17-5" tabindex="-1"></a><span class="co"># Extract prediction for baseline mortality</span></span>
+<span id="cb17-6"><a href="#cb17-6" tabindex="-1"></a>mort_bckg_mu <span class="ot">&lt;-</span> <span class="fu">predict</span>(mort_glm_bckg,</span>
+<span id="cb17-7"><a href="#cb17-7" tabindex="-1"></a>  <span class="at">newdata =</span> mort_df_germany,</span>
+<span id="cb17-8"><a href="#cb17-8" tabindex="-1"></a>  <span class="at">type =</span> <span class="st">&quot;response&quot;</span></span>
+<span id="cb17-9"><a href="#cb17-9" tabindex="-1"></a>)</span>
+<span id="cb17-10"><a href="#cb17-10" tabindex="-1"></a><span class="co"># store size parameter of ngeative binomial distribution</span></span>
+<span id="cb17-11"><a href="#cb17-11" tabindex="-1"></a>theta <span class="ot">&lt;-</span> mort_glm_bckg<span class="sc">$</span>theta</span></code></pre></div>
+<p><em>excode</em> models the mean of the excess states as
+multiplicative increase compared to the mean of the normal/background
+state. Initial estimates for the mean of each excess state are chosen as
+the 75%-, 85%-, and 95%-quantile of the relative increase of the
+observed number of deaths compared to the estimated baseline, which
+corresponds to a 6%, 10% and 21% increase:</p>
+<div class="sourceCode" id="cb18"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb18-1"><a href="#cb18-1" tabindex="-1"></a><span class="co"># Relative increase of observed mortality compared to background</span></span>
+<span id="cb18-2"><a href="#cb18-2" tabindex="-1"></a>p_increase <span class="ot">&lt;-</span> mort_df_germany<span class="sc">$</span>observed <span class="sc">/</span> mort_bckg_mu</span>
+<span id="cb18-3"><a href="#cb18-3" tabindex="-1"></a></span>
+<span id="cb18-4"><a href="#cb18-4" tabindex="-1"></a><span class="co"># Initial values for multipicative increase of model states</span></span>
+<span id="cb18-5"><a href="#cb18-5" tabindex="-1"></a>qcut <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="fl">0.75</span>, <span class="fl">0.85</span>, <span class="fl">0.95</span>)</span>
+<span id="cb18-6"><a href="#cb18-6" tabindex="-1"></a>state_increase <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="dv">1</span>, <span class="fu">quantile</span>(p_increase, <span class="at">prob =</span> qcut))</span>
+<span id="cb18-7"><a href="#cb18-7" tabindex="-1"></a><span class="fu">names</span>(state_increase) <span class="ot">&lt;-</span> <span class="fu">c</span>(<span class="st">&quot;mu0&quot;</span>, <span class="st">&quot;mu1&quot;</span>, <span class="st">&quot;mu2&quot;</span>, <span class="st">&quot;mu3&quot;</span>)</span>
+<span id="cb18-8"><a href="#cb18-8" tabindex="-1"></a>state_increase</span></code></pre></div>
+<pre><code>##  mu0  mu1  mu2  mu3 
+## 1.00 1.06 1.10 1.21</code></pre>
+<p>The initial estimates of the mean are calculated as follows:</p>
+<div class="sourceCode" id="cb20"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb20-1"><a href="#cb20-1" tabindex="-1"></a><span class="co"># Initial estimates of expected mortality of all states</span></span>
+<span id="cb20-2"><a href="#cb20-2" tabindex="-1"></a>initial_mu <span class="ot">&lt;-</span> mort_bckg_mu <span class="sc">%*%</span> <span class="fu">t</span>(state_increase)</span>
+<span id="cb20-3"><a href="#cb20-3" tabindex="-1"></a><span class="fu">kable</span>(<span class="fu">as_tibble</span>(initial_mu[<span class="dv">1</span><span class="sc">:</span><span class="dv">6</span>, ])) <span class="sc">%&gt;%</span></span>
+<span id="cb20-4"><a href="#cb20-4" tabindex="-1"></a>  <span class="fu">kable_styling</span>(<span class="at">font_size =</span> <span class="dv">11</span>)</span></code></pre></div>
+<table class="table" style="font-size: 11px; margin-left: auto; margin-right: auto;">
+<thead>
+<tr>
+<th style="text-align:right;">
+mu0
+</th>
+<th style="text-align:right;">
+mu1
+</th>
+<th style="text-align:right;">
+mu2
+</th>
+<th style="text-align:right;">
+mu3
+</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td style="text-align:right;">
+18059.8
+</td>
+<td style="text-align:right;">
+19089.8
+</td>
+<td style="text-align:right;">
+19881.9
+</td>
+<td style="text-align:right;">
+21897.1
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+18162.4
+</td>
+<td style="text-align:right;">
+19198.2
+</td>
+<td style="text-align:right;">
+19994.9
+</td>
+<td style="text-align:right;">
+22021.5
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+18244.6
+</td>
+<td style="text-align:right;">
+19285.0
+</td>
+<td style="text-align:right;">
+20085.3
+</td>
+<td style="text-align:right;">
+22121.1
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+18304.8
+</td>
+<td style="text-align:right;">
+19348.7
+</td>
+<td style="text-align:right;">
+20151.6
+</td>
+<td style="text-align:right;">
+22194.2
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+18342.2
+</td>
+<td style="text-align:right;">
+19388.2
+</td>
+<td style="text-align:right;">
+20192.8
+</td>
+<td style="text-align:right;">
+22239.5
+</td>
+</tr>
+<tr>
+<td style="text-align:right;">
+18356.1
+</td>
+<td style="text-align:right;">
+19402.9
+</td>
+<td style="text-align:right;">
+20208.0
+</td>
+<td style="text-align:right;">
+22256.3
+</td>
+</tr>
+</tbody>
+</table>
+<p>Now the model can be defined using <code>excodeFormula()</code>. In
+this example, the estimated baseline (mu0) is kept fixed during model
+fitting. To achieve this, it is included as offset
+(<code>offset = TRUE</code>) in the estimation and the model is
+estimated without intercept (<code>intercept = FALSE</code>):</p>
+<div class="sourceCode" id="cb21"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb21-1"><a href="#cb21-1" tabindex="-1"></a>nStates <span class="ot">&lt;-</span> <span class="dv">4</span></span>
+<span id="cb21-2"><a href="#cb21-2" tabindex="-1"></a>excode_formula_multistate <span class="ot">&lt;-</span> <span class="fu">excodeFormula</span>(<span class="st">&quot;MultiState&quot;</span>,</span>
+<span id="cb21-3"><a href="#cb21-3" tabindex="-1"></a>  <span class="at">nStates =</span> nStates,</span>
+<span id="cb21-4"><a href="#cb21-4" tabindex="-1"></a>  <span class="at">intercept =</span> <span class="cn">FALSE</span>,</span>
+<span id="cb21-5"><a href="#cb21-5" tabindex="-1"></a>  <span class="at">offset =</span> <span class="cn">TRUE</span></span>
+<span id="cb21-6"><a href="#cb21-6" tabindex="-1"></a>)</span>
+<span id="cb21-7"><a href="#cb21-7" tabindex="-1"></a>excode_family_nb <span class="ot">&lt;-</span> <span class="fu">excodeFamily</span>(<span class="st">&quot;NegBinom&quot;</span>, <span class="at">nb_size =</span> theta)</span>
+<span id="cb21-8"><a href="#cb21-8" tabindex="-1"></a>excode_multistate_nb <span class="ot">&lt;-</span> <span class="fu">excodeModel</span>(excode_family_nb,</span>
+<span id="cb21-9"><a href="#cb21-9" tabindex="-1"></a>  excode_formula_multistate,</span>
+<span id="cb21-10"><a href="#cb21-10" tabindex="-1"></a>  <span class="at">initial_mu =</span> initial_mu</span>
+<span id="cb21-11"><a href="#cb21-11" tabindex="-1"></a>)</span></code></pre></div>
+<p>The last step before fitting the <em>excode</em> model is to define
+the input <code>data.frame</code> containg all necessary variables. Note
+that the offset variable is set to the estimated baseline mortality
+(<code>mort_bckg_mu</code>) and timepoints where no excess is assumed
+are included as 0s in the <code>state</code> variable (NA for other
+weeks).</p>
+<div class="sourceCode" id="cb22"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb22-1"><a href="#cb22-1" tabindex="-1"></a><span class="co"># Create input data.frame</span></span>
+<span id="cb22-2"><a href="#cb22-2" tabindex="-1"></a>mort_df_germany_input <span class="ot">&lt;-</span> mort_df_germany <span class="sc">%&gt;%</span></span>
+<span id="cb22-3"><a href="#cb22-3" tabindex="-1"></a>  <span class="fu">mutate</span>(</span>
+<span id="cb22-4"><a href="#cb22-4" tabindex="-1"></a>    <span class="at">state =</span> <span class="fu">ifelse</span>(bckg_week, <span class="dv">0</span>, <span class="cn">NA</span>),</span>
+<span id="cb22-5"><a href="#cb22-5" tabindex="-1"></a>    <span class="at">offset =</span> mort_bckg_mu</span>
+<span id="cb22-6"><a href="#cb22-6" tabindex="-1"></a>  ) <span class="sc">%&gt;%</span></span>
+<span id="cb22-7"><a href="#cb22-7" tabindex="-1"></a>  dplyr<span class="sc">::</span><span class="fu">select</span>(date, observed, offset, id, state)</span></code></pre></div>
+</div>
+<div id="estimation-and-visualization-of-the-multistate-model" class="section level3">
+<h3>Estimation and visualization of the ‘MultiState’ model</h3>
+<p>The ‘MultiState’ model can now be fitted using
+<code>run_excode()</code> as usual:</p>
+<div class="sourceCode" id="cb23"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb23-1"><a href="#cb23-1" tabindex="-1"></a>res_excode_multistate_nb <span class="ot">&lt;-</span> <span class="fu">run_excode</span>(mort_df_germany_input,</span>
+<span id="cb23-2"><a href="#cb23-2" tabindex="-1"></a>  excode_multistate_nb,</span>
+<span id="cb23-3"><a href="#cb23-3" tabindex="-1"></a>  <span class="fu">nrow</span>(mort_df_germany_input),</span>
+<span id="cb23-4"><a href="#cb23-4" tabindex="-1"></a>  <span class="at">return_full_model =</span> <span class="cn">TRUE</span>,</span>
+<span id="cb23-5"><a href="#cb23-5" tabindex="-1"></a>  <span class="at">time_units_back =</span> <span class="dv">10</span></span>
+<span id="cb23-6"><a href="#cb23-6" tabindex="-1"></a>)</span>
+<span id="cb23-7"><a href="#cb23-7" tabindex="-1"></a>res_mort_germany <span class="ot">&lt;-</span> <span class="fu">summary</span>(res_excode_multistate_nb)</span></code></pre></div>
+<p>The results and weekly excess probablities can be plottad as
+follows:</p>
+<div class="sourceCode" id="cb24"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb24-1"><a href="#cb24-1" tabindex="-1"></a>p1 <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(res_mort_germany <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(</span>
+<span id="cb24-2"><a href="#cb24-2" tabindex="-1"></a>  <span class="at">obs_excess =</span> <span class="fu">ifelse</span>(<span class="dv">1</span> <span class="sc">-</span> posterior0 <span class="sc">&gt;</span> <span class="fl">0.5</span>, observed, <span class="cn">NA</span>),</span>
+<span id="cb24-3"><a href="#cb24-3" tabindex="-1"></a>  <span class="at">group =</span> <span class="st">&quot;Data and model fit&quot;</span></span>
+<span id="cb24-4"><a href="#cb24-4" tabindex="-1"></a>)) <span class="sc">+</span></span>
+<span id="cb24-5"><a href="#cb24-5" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x =</span> date, <span class="at">y =</span> observed, <span class="at">color =</span> <span class="st">&quot;Week with excess probabilty&lt;=0.5&quot;</span>),</span>
+<span id="cb24-6"><a href="#cb24-6" tabindex="-1"></a>    <span class="at">linewidth =</span> <span class="dv">1</span></span>
+<span id="cb24-7"><a href="#cb24-7" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb24-8"><a href="#cb24-8" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x =</span> date, <span class="at">y =</span> mu0, <span class="at">color =</span> <span class="st">&quot;mu0 (normal)&quot;</span>), <span class="at">linewidth =</span> <span class="fl">0.75</span>) <span class="sc">+</span></span>
+<span id="cb24-9"><a href="#cb24-9" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x =</span> date, <span class="at">y =</span> mu1, <span class="at">color =</span> <span class="st">&quot;mu1 (low excess)&quot;</span>),</span>
+<span id="cb24-10"><a href="#cb24-10" tabindex="-1"></a>    <span class="at">linewidth =</span> <span class="fl">0.75</span>, <span class="at">alpha =</span> <span class="fl">0.75</span>,</span>
+<span id="cb24-11"><a href="#cb24-11" tabindex="-1"></a>    <span class="at">linetype =</span> <span class="st">&quot;dashed&quot;</span></span>
+<span id="cb24-12"><a href="#cb24-12" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb24-13"><a href="#cb24-13" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x =</span> date, <span class="at">y =</span> mu2, <span class="at">color =</span> <span class="st">&quot;mu2 (medium excess)&quot;</span>),</span>
+<span id="cb24-14"><a href="#cb24-14" tabindex="-1"></a>    <span class="at">linewidth =</span> <span class="fl">0.75</span>, <span class="at">alpha =</span> <span class="fl">0.75</span>,</span>
+<span id="cb24-15"><a href="#cb24-15" tabindex="-1"></a>    <span class="at">linetype =</span> <span class="st">&quot;dashed&quot;</span></span>
+<span id="cb24-16"><a href="#cb24-16" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb24-17"><a href="#cb24-17" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x =</span> date, <span class="at">y =</span> mu3, <span class="at">color =</span> <span class="st">&quot;mu3 (high excess)&quot;</span>),</span>
+<span id="cb24-18"><a href="#cb24-18" tabindex="-1"></a>    <span class="at">linewidth =</span> <span class="fl">0.75</span>, <span class="at">alpha =</span> <span class="fl">0.75</span>,</span>
+<span id="cb24-19"><a href="#cb24-19" tabindex="-1"></a>    <span class="at">linetype =</span> <span class="st">&quot;dashed&quot;</span></span>
+<span id="cb24-20"><a href="#cb24-20" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb24-21"><a href="#cb24-21" tabindex="-1"></a>  <span class="fu">geom_point</span>(<span class="fu">aes</span>(<span class="at">x =</span> date, <span class="at">y =</span> obs_excess, <span class="at">color =</span> <span class="st">&quot;Week with excess probabilty&gt;0.5&quot;</span>)) <span class="sc">+</span></span>
+<span id="cb24-22"><a href="#cb24-22" tabindex="-1"></a>  <span class="fu">geom_line</span>(<span class="fu">aes</span>(<span class="at">x =</span> date, <span class="at">y =</span> obs_excess, <span class="at">color =</span> <span class="st">&quot;Week with excess probabilty&gt;0.5&quot;</span>), <span class="at">linewidth =</span> <span class="dv">1</span>) <span class="sc">+</span></span>
+<span id="cb24-23"><a href="#cb24-23" tabindex="-1"></a>  <span class="fu">scale_color_manual</span>(<span class="at">values =</span> <span class="fu">c</span>(<span class="st">&quot;lightgreen&quot;</span>, <span class="st">&quot;gold&quot;</span>, <span class="st">&quot;orange&quot;</span>, <span class="st">&quot;tomato&quot;</span>, <span class="st">&quot;black&quot;</span>, <span class="st">&quot;cornflowerblue&quot;</span>)) <span class="sc">+</span></span>
+<span id="cb24-24"><a href="#cb24-24" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>group, <span class="at">strip.position =</span> <span class="st">&quot;right&quot;</span>) <span class="sc">+</span></span>
+<span id="cb24-25"><a href="#cb24-25" tabindex="-1"></a>  <span class="fu">xlab</span>(<span class="st">&quot;&quot;</span>) <span class="sc">+</span></span>
+<span id="cb24-26"><a href="#cb24-26" tabindex="-1"></a>  <span class="fu">ylab</span>(<span class="st">&quot;Number of deaths&quot;</span>) <span class="sc">+</span></span>
+<span id="cb24-27"><a href="#cb24-27" tabindex="-1"></a>  <span class="fu">theme_bw</span>() <span class="sc">+</span></span>
+<span id="cb24-28"><a href="#cb24-28" tabindex="-1"></a>  <span class="fu">theme</span>(</span>
+<span id="cb24-29"><a href="#cb24-29" tabindex="-1"></a>    <span class="at">axis.text.y =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">90</span>, <span class="at">vjust =</span> <span class="dv">1</span>, <span class="at">hjust =</span> <span class="fl">0.5</span>), <span class="at">legend.position =</span> <span class="st">&quot;top&quot;</span>,</span>
+<span id="cb24-30"><a href="#cb24-30" tabindex="-1"></a>    <span class="at">legend.title =</span> <span class="fu">element_blank</span>(), <span class="at">legend.key.width =</span> <span class="fu">unit</span>(<span class="dv">1</span>, <span class="st">&quot;cm&quot;</span>),</span>
+<span id="cb24-31"><a href="#cb24-31" tabindex="-1"></a>    <span class="at">plot.margin =</span> <span class="fu">unit</span>(<span class="fu">c</span>(<span class="dv">0</span>, <span class="fl">0.5</span>, <span class="dv">0</span>, <span class="fl">0.5</span>), <span class="st">&quot;cm&quot;</span>)</span>
+<span id="cb24-32"><a href="#cb24-32" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb24-33"><a href="#cb24-33" tabindex="-1"></a>  <span class="fu">guides</span>(<span class="at">color =</span> <span class="fu">guide_legend</span>(<span class="at">override.aes =</span> <span class="fu">list</span>(<span class="at">linewidth =</span> <span class="fl">1.2</span>)))</span>
+<span id="cb24-34"><a href="#cb24-34" tabindex="-1"></a></span>
+<span id="cb24-35"><a href="#cb24-35" tabindex="-1"></a>p2 <span class="ot">&lt;-</span> <span class="fu">ggplot</span>(res_mort_germany <span class="sc">%&gt;%</span> <span class="fu">mutate</span>(<span class="at">excess_prob =</span> <span class="dv">1</span> <span class="sc">-</span> posterior0, <span class="at">group =</span> <span class="st">&quot;Excess probability&quot;</span>)) <span class="sc">+</span></span>
+<span id="cb24-36"><a href="#cb24-36" tabindex="-1"></a>  <span class="fu">geom_ribbon</span>(<span class="fu">aes</span>(<span class="at">x =</span> date, <span class="at">ymin =</span> <span class="dv">0</span>, <span class="at">ymax =</span> excess_prob),</span>
+<span id="cb24-37"><a href="#cb24-37" tabindex="-1"></a>    <span class="at">color =</span> <span class="st">&quot;cornflowerblue&quot;</span>, <span class="at">fill =</span> <span class="st">&quot;cornflowerblue&quot;</span>,</span>
+<span id="cb24-38"><a href="#cb24-38" tabindex="-1"></a>    <span class="at">alpha =</span> <span class="fl">0.75</span></span>
+<span id="cb24-39"><a href="#cb24-39" tabindex="-1"></a>  ) <span class="sc">+</span></span>
+<span id="cb24-40"><a href="#cb24-40" tabindex="-1"></a>  <span class="fu">geom_hline</span>(<span class="at">yintercept =</span> <span class="fl">0.5</span>, <span class="at">linetype =</span> <span class="st">&quot;dotted&quot;</span>, <span class="at">alpha =</span> <span class="fl">0.5</span>) <span class="sc">+</span></span>
+<span id="cb24-41"><a href="#cb24-41" tabindex="-1"></a>  <span class="fu">facet_wrap</span>(<span class="sc">~</span>group, <span class="at">strip.position =</span> <span class="st">&quot;right&quot;</span>) <span class="sc">+</span></span>
+<span id="cb24-42"><a href="#cb24-42" tabindex="-1"></a>  <span class="fu">xlab</span>(<span class="st">&quot;Week of death&quot;</span>) <span class="sc">+</span></span>
+<span id="cb24-43"><a href="#cb24-43" tabindex="-1"></a>  <span class="fu">ylab</span>(<span class="st">&quot;Excess probability&quot;</span>) <span class="sc">+</span></span>
+<span id="cb24-44"><a href="#cb24-44" tabindex="-1"></a>  <span class="fu">theme_bw</span>() <span class="sc">+</span></span>
+<span id="cb24-45"><a href="#cb24-45" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">axis.text.y =</span> <span class="fu">element_text</span>(<span class="at">angle =</span> <span class="dv">90</span>, <span class="at">vjust =</span> <span class="dv">1</span>, <span class="at">hjust =</span> <span class="fl">0.5</span>)) <span class="sc">+</span></span>
+<span id="cb24-46"><a href="#cb24-46" tabindex="-1"></a>  <span class="fu">scale_y_continuous</span>(<span class="at">breaks =</span> <span class="fu">c</span>(<span class="dv">0</span>, <span class="fl">0.5</span>, <span class="dv">1</span>)) <span class="sc">+</span></span>
+<span id="cb24-47"><a href="#cb24-47" tabindex="-1"></a>  <span class="fu">theme</span>(<span class="at">plot.margin =</span> <span class="fu">unit</span>(<span class="fu">c</span>(<span class="dv">0</span>, <span class="fl">0.5</span>, <span class="fl">0.5</span>, <span class="fl">0.5</span>), <span class="st">&quot;cm&quot;</span>))</span>
+<span id="cb24-48"><a href="#cb24-48" tabindex="-1"></a></span>
+<span id="cb24-49"><a href="#cb24-49" tabindex="-1"></a>layout <span class="ot">&lt;-</span> <span class="fu">matrix</span>(<span class="fu">c</span>(<span class="dv">1</span>, <span class="dv">1</span>, <span class="dv">2</span>), <span class="at">ncol =</span> <span class="dv">1</span>)</span>
+<span id="cb24-50"><a href="#cb24-50" tabindex="-1"></a><span class="fu">grid.arrange</span>(<span class="at">grobs =</span> <span class="fu">list</span>(p1, p2), <span class="at">nrow =</span> <span class="dv">2</span>, <span class="at">layout_matrix =</span> layout)</span></code></pre></div>
+<div class="figure" style="text-align: center">
+<img src="data:text/html; charset=iso-8859-1;charset=utf-8,%3C%21DOCTYPE%20HTML%20PUBLIC%20%22%2D%2F%2FW3C%2F%2FDTD%20HTML%204%2E01%2F%2FEN%22%20%22http%3A%2F%2Fwww%2Ew3%2Eorg%2FTR%2Fhtml4%2Fstrict%2Edtd%22%3E%0A%3Chtml%3E%0A%3Chead%3E%0A%3Ctitle%3EFatal%20Error%3C%2Ftitle%3E%0A%3Cmeta%20http%2Dequiv%3D%22Content%2DType%22%20content%3D%22text%2Fhtml%3B%20charset%3Diso%2D8859%2D1%22%20%2F%3E%0A%3Cmeta%20http%2Dequiv%3D%22Cache%2DControl%22%20content%3D%22no%2Dcache%22%20%2F%3E%0A%3C%2Fhead%3E%0A%3Cbody%3E%0A%3Clink%20rel%3D%22shortcut%20icon%22%20type%3D%22image%2Fx%2Dicon%22%20href%3D%22%2Fgenua%2Dwwwrelay%2Dinternal%2Ffavicon%2Eico%22%20%2F%3E%0A%3Clink%20rel%3D%22stylesheet%22%20type%3D%22text%2Fcss%22%20href%3D%22%2Fgenua%2Dwwwrelay%2Dinternal%2Fgg%2Ecss%22%20%2F%3E%0A%0A%3Cdiv%3E%0A%20%20%3Cdiv%20id%3D%22header%22%3E%0A%20%20%20%20%3Cdiv%20id%3D%22version%22%3EWWW%20Proxy%3C%2Fdiv%3E%0A%20%20%3C%2Fdiv%3E%0A%20%20%3Cdiv%20id%3D%22page%22%3E%0A%20%20%20%20%3Ch1%3EFatal%20Error%3C%2Fh1%3ECould%20not%20get%20an%20IP%20address%20SERVER%20ERROR%3Cp%3E%0A%20%20%20%20%3Caddress%3EGenerated%20by%20your%20WWW%20Proxy%20%28wwwrelay%29%20on%20fw%2Dberlin%2Ebund%2Ede%3C%2Faddress%3E%0A%20%20%3C%2Fdiv%3E%0A%3C%2Fdiv%3E%0A%3C%2Fbody%3E%0A%3C%2Fhtml%3E%0A%0A" alt="**Figure 6:** *Top*: Weekly all-cause mortaility in Germany and expected mortality of the normal and three excess states are shown. Weeks with excess probabilty&gt;0.5 are shown in blue. *Bottom*: Weekly excess probability." />
+<p class="caption">
+<strong>Figure 6:</strong> <em>Top</em>: Weekly all-cause mortaility in
+Germany and expected mortality of the normal and three excess states are
+shown. Weeks with excess probabilty&gt;0.5 are shown in blue.
+<em>Bottom</em>: Weekly excess probability.
+</p>
+</div>
+</div>
+</div>
+<div id="a-short-overview-of-the-statistical-model" class="section level2">
+<h2>A short overview of the statistical model</h2>
+<p>The <em>excode</em> package combines Generalized Linear Models (GLMs)
+with Hidden Markov Models (HMMs). The GLM part of the model allows to
+use regression models to model seasonal patterns and general trends in
+the time series. Besides seasonal patterns and general time trends, an
+algorithm for excess count detection needs to account for excess counts
+in the historic data used for model estimation. The HMM part of the
+statistical model used in <em>excode</em> allows to explicitly consider
+past disease outbreaks in the model. The HMM separates the time series
+in two (or more) states: the normal state and one (or multiple) excess
+state. In the normal state, observed case counts lie within the range of
+what is normally expected in a certain time period. In the excess state,
+case counts are higher than what is normally expected, i.e. there is a
+potential outbreak or excess mortality. This is in contrast most of
+other algorithms used for excess count detection, which either do not
+account for previous excess case counts or use some heuristic for down
+weighting past instances of excess counts.</p>
+<div class="sourceCode" id="cb25"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb25-1"><a href="#cb25-1" tabindex="-1"></a>har_model_pois <span class="ot">&lt;-</span> <span class="fu">run_excode</span>(shadar_df, excode_har_pois, <span class="dv">285</span>,</span>
+<span id="cb25-2"><a href="#cb25-2" tabindex="-1"></a>  <span class="at">return_full_model =</span> <span class="cn">TRUE</span></span>
+<span id="cb25-3"><a href="#cb25-3" tabindex="-1"></a>)</span>
+<span id="cb25-4"><a href="#cb25-4" tabindex="-1"></a><span class="fu">plot</span>(har_model_pois)</span></code></pre></div>
+<div class="figure" style="text-align: center">
+<img src="data:text/html; charset=iso-8859-1;charset=utf-8,%3C%21DOCTYPE%20HTML%20PUBLIC%20%22%2D%2F%2FW3C%2F%2FDTD%20HTML%204%2E01%2F%2FEN%22%20%22http%3A%2F%2Fwww%2Ew3%2Eorg%2FTR%2Fhtml4%2Fstrict%2Edtd%22%3E%0A%3Chtml%3E%0A%3Chead%3E%0A%3Ctitle%3EFatal%20Error%3C%2Ftitle%3E%0A%3Cmeta%20http%2Dequiv%3D%22Content%2DType%22%20content%3D%22text%2Fhtml%3B%20charset%3Diso%2D8859%2D1%22%20%2F%3E%0A%3Cmeta%20http%2Dequiv%3D%22Cache%2DControl%22%20content%3D%22no%2Dcache%22%20%2F%3E%0A%3C%2Fhead%3E%0A%3Cbody%3E%0A%3Clink%20rel%3D%22shortcut%20icon%22%20type%3D%22image%2Fx%2Dicon%22%20href%3D%22%2Fgenua%2Dwwwrelay%2Dinternal%2Ffavicon%2Eico%22%20%2F%3E%0A%3Clink%20rel%3D%22stylesheet%22%20type%3D%22text%2Fcss%22%20href%3D%22%2Fgenua%2Dwwwrelay%2Dinternal%2Fgg%2Ecss%22%20%2F%3E%0A%0A%3Cdiv%3E%0A%20%20%3Cdiv%20id%3D%22header%22%3E%0A%20%20%20%20%3Cdiv%20id%3D%22version%22%3EWWW%20Proxy%3C%2Fdiv%3E%0A%20%20%3C%2Fdiv%3E%0A%20%20%3Cdiv%20id%3D%22page%22%3E%0A%20%20%20%20%3Ch1%3EFatal%20Error%3C%2Fh1%3ECould%20not%20get%20an%20IP%20address%20SERVER%20ERROR%3Cp%3E%0A%20%20%20%20%3Caddress%3EGenerated%20by%20your%20WWW%20Proxy%20%28wwwrelay%29%20on%20fw%2Dberlin%2Ebund%2Ede%3C%2Faddress%3E%0A%20%20%3C%2Fdiv%3E%0A%3C%2Fdiv%3E%0A%3C%2Fbody%3E%0A%3C%2Fhtml%3E%0A%0A" alt="**Figure 7:** Components of an *excode* Harmonic model using a Poisson distribution." />
+<p class="caption">
+<strong>Figure 7:</strong> Components of an <em>excode</em> Harmonic
+model using a Poisson distribution.
+</p>
+</div>
+<p>The components of an example two state model are shown in Figure 7.
+Each position <span class="math inline">\(t\)</span> in the time series
+of length <span class="math inline">\(T\)</span> is in a state <span class="math inline">\(s_t \in \left\{ N,E\right\}, t\in
+\left[1;T\right]\)</span> , where <span class="math inline">\(N\)</span>
+represents the normal and <span class="math inline">\(E\)</span> the
+excess state. The sequence of normal and excess states is modeled by the
+HMM using initial state and transition probabilites (left boxes in
+Figure 7):</p>
+<ul>
+<li>Initial state probabilities <span class="math inline">\(\Pr(s_{1}=N\bigr)\)</span> and <span class="math inline">\(\Pr(s_{1}=E\bigr)\)</span> give the probability
+that the first time point of the time series is in the respective
+state.</li>
+<li>Transition probabilities give the probability that time point <span class="math inline">\(t\)</span> is in a specific state, given the state
+of the previous time point. For instance, <span class="math inline">\(\Pr\left(s_{t}=N\left|s_{t-1}=N\right.\right)\)</span>,
+<span class="math inline">\(t\in\left[1;T\right]\)</span> gives the
+probability that the time series is in the normal state at time point
+<span class="math inline">\(t\)</span>, given that position <span class="math inline">\(t-1\)</span> is also in the normal state. <span class="math inline">\(\Pr\left(s_{t}=E\left|s_{t-1}=N\right.\right)\)</span>
+gives the probability to transition to the excess state at time point
+<span class="math inline">\(t\)</span>, given that <span class="math inline">\(t-1\)</span> is in the normal state.</li>
+</ul>
+<p>In the example shown in Figure 7, the case counts <span class="math inline">\(c_{t}, t\in\left[1;T\right]\)</span> are assumed
+to follow a Poisson distribution: <span class="math inline">\(c_{t} \sim
+Pois \left(\mu_{t}\right)\)</span>. The expected case counts at position
+<span class="math inline">\(t\)</span>, <span class="math inline">\(\mu_t\)</span> are modeled using a GLM using sine
+and cosine functions to control for seasonal patterns (which is one of
+the models available in <em>excode</em>):</p>
+<p><span class="math display">\[
+\log\mu_{t}=\beta_{0}+\beta_{1}t+ \beta_3 \cos(\frac{2\pi}{52}t) +
+\beta_4\sin(\frac{2\pi}{52}t) +
+\beta_{5}I\left(s_{t}=E\right)
+\]</span></p>
+<p>Here, <span class="math inline">\(\beta_{0}\)</span> is the
+intercept, <span class="math inline">\(\beta_{1}t\)</span> a linear time
+trend, <span class="math inline">\(\beta_3\)</span> and <span class="math inline">\(\beta_4\)</span> model the seasonal patterns using
+<span class="math inline">\(\sin\)</span> and <span class="math inline">\(\cos\)</span> functions with weekly data (52 time
+points per year). The increase in cases is incorporated by <span class="math inline">\(\beta_{5}\)</span>.</p>
+<p>Based on this model, <em>excode</em> calculates a probability that
+there is an excess of case counts at the current time point - the
+posterior probability (bottom middle box in Figure 7). Moreover, given
+the normally expected case counts in the model, a p-value for the null
+hypothesis, that there is no excess at the current timepoint is
+calculated (bottom right box in Figure 7).</p>
+</div>
+
+
+
+<!-- code folding -->
+
+
+<!-- dynamically load mathjax for compatibility with self-contained -->
+<script>
+  (function () {
+    var script = document.createElement("script");
+    script.type = "text/javascript";
+    script.src  = "https://mathjax.rstudio.com/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML";
+    document.getElementsByTagName("head")[0].appendChild(script);
+  })();
+</script>
+
+</body>
+</html>

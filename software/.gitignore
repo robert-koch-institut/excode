@@ -1,5 +1,8 @@
-inst/doc
+docs
 .Rproj.user
 .Rhistory
 .RData
 .Ruserdata
+Meta
+../.Rhistory
+../.Rproj.user/
