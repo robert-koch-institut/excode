@@ -3,5 +3,8 @@ pkgdown: 2.0.9
 pkgdown_sha: ~
 articles:
   excode: excode.html
-last_built: 2025-05-27T14:01Z
+last_built: 2025-05-28T15:06Z
+urls:
+  reference: https://robert-koch-institut.github.io/excode/reference
+  article: https://robert-koch-institut.github.io/excode/articles
 
