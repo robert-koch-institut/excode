@@ -1,6 +1,6 @@
 Package: excode
 Title: Excess Count Detection in Epidemiological Time Series
-Version: 1.0.0
+Version: 0.0.0.9000
 Authors@R: 
     c(person("Benedikt", "Zacher", , "ZacherB@rki.de", role = c("aut", "cre","cph")),
       person("Ann Christin", "Vietor", role = "ctb"))
@@ -37,3 +37,4 @@ Encoding: UTF-8
 LazyData: true
 NeedsCompilation: no
 RoxygenNote: 7.3.2
+URL: https://robert-koch-institut.github.io/excode/
