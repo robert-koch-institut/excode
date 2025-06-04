@@ -4,7 +4,7 @@
   "resource_type": {
     "id": "software"
   },
-  "publication_date": "2025-05-26",
+  "publication_date": "2025-06-04",
   "creators": [
     {
       "person_or_org": {
@@ -47,10 +47,10 @@
   ],
   "contributors": [],
   "publisher": "Zenodo",
-  "version": "2025-05-26",
+  "version": "2025-06-04",
   "dates": [
     {
-      "date": "2025-05-26T15:23:49+02:00",
+      "date": "2025-06-04T16:58:51+02:00",
       "type": {
         "id": "created"
       },
@@ -76,7 +76,7 @@
   ],
   "rights": [
     {
-      "id": "gpl-3.0"
+      "id": "gpl-3.0-only"
     }
   ],
   "subjects": [
