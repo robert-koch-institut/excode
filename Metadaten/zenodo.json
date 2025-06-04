@@ -1,0 +1,64 @@
+{
+  "title": "excode: Excess Count Detection in Epidemiological Time Series",
+  "description": "<p>This repository contains the R package excode with a variety of functions for excess count detection in epidemiological time series. Excess count detection is an important part of public health surveillance.</p>\n",
+  "creators": [
+    {
+      "name": "Zacher, Benedikt",
+      "affiliation": "Robert Koch-Institut",
+      "orcid": "0000-0002-6107-6389"
+    },
+    {
+      "name": "Vietor, Ann Christin",
+      "affiliation": "Robert Koch-Institut",
+      "orcid": "0009-0008-5392-1774"
+    }
+  ],
+  "contributors": [],
+  "keywords": [
+    "Deutschland",
+    "Germany",
+    "RKI",
+    "Open Data",
+    "Krankheitsausbrüche (Epidemien)",
+    "Disease Outbreaks",
+    "Population Surveillance",
+    "Gesundheitsüberwachung",
+    "Epidemiology",
+    "Epidemiologie",
+    "Models, Statistical",
+    "Statistische Modelle",
+    "Hidden Markov Models",
+    "Mortality",
+    "Mortalität",
+    "Excess Mortality",
+    "Übersterblichkeit",
+    "Generalized Linear Models"
+  ],
+  "publication_date": "2025-06-04",
+  "version": "2025-06-04",
+  "upload_type": "software",
+  "access_right": "open",
+  "license": "GPL-3.0-ONLY",
+  "language": "deu",
+  "communities": [
+    {
+      "identifier": "robertkochinstitut"
+    }
+  ],
+  "subjects": [],
+  "dates": [
+    {
+      "start": "2025-06-04T16:58:51+02:00",
+      "end": "2025-06-04T16:58:51+02:00",
+      "type": "Created",
+      "description": "Date when the published data was created"
+    }
+  ],
+  "related_identifiers": [
+    {
+      "relation": "isSupplementTo",
+      "identifier": "https://github.com/robert-koch-institut/excode",
+      "resource_type": "software"
+    }
+  ]
+}
