@@ -1,8 +1,3 @@
-<p align="right">
-
-<img src="https://robert-koch-institut.github.io/SARS-CoV-2-Infektionen_in_Deutschland/assets/RKI_Logo.png" style="width: auto; height: 60px;"/>
-
-</p>
 
 <!-- HEADER_START: {"lang": "en"} -->
 
@@ -198,9 +193,9 @@ The publication of the code as well as the quality management of the
 metadata is done by department [MF 4 \| Domain Specific Data and
 Research Data
 Management](https://www.rki.de/EN/Institute/Organisation/Departments/MFI/MF4/mf4-domain-specific-data-and-research-data-management-node.html).
-Questions regarding data management and the publication infrastructure
+Questions regarding the publication infrastructure
 can be directed to the Open Data Team of the Department MF4 at
-[OpenData\@rki.de](mailto:OpenData@rki.de){.email}.
+[OpenData\@rki.de](mailto:OpenData@rki.de).
 
 ## Funding
 
