@@ -40,7 +40,7 @@ install this package.
 
 ``` commandline
 library(devtools)
-install_github("robert-koch-institut/Excess_count_detection_for_epidemiological_time_series")
+install_github("robert-koch-institut/excode",subdir = "software")
 ```
 
 ## Overview
