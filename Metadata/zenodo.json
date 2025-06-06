@@ -34,8 +34,8 @@
     "Übersterblichkeit",
     "Generalized Linear Models"
   ],
-  "publication_date": "2025-06-04",
-  "version": "2025-06-04",
+  "publication_date": "2025-06-06",
+  "version": "v0.0.0.9000",
   "upload_type": "software",
   "access_right": "open",
   "license": "GPL-3.0-ONLY",
@@ -48,8 +48,8 @@
   "subjects": [],
   "dates": [
     {
-      "start": "2025-06-04T16:58:51+02:00",
-      "end": "2025-06-04T16:58:51+02:00",
+      "start": "2025-06-06T17:04:04+02:00",
+      "end": "2025-06-06T17:04:04+02:00",
       "type": "Created",
       "description": "Date when the published data was created"
     }
@@ -59,6 +59,11 @@
       "relation": "isSupplementTo",
       "identifier": "https://github.com/robert-koch-institut/excode",
       "resource_type": "software"
+    },
+    {
+      "relation": "isDescribedBy",
+      "identifier": "https://robert-koch-institut.github.io/excode/",
+      "resource_type": "other"
     }
   ]
 }

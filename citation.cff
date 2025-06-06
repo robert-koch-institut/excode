@@ -5,7 +5,7 @@ abstract: >-
   This repository contains the R package excode with a variety of functions for
   excess count detection in epidemiological time series. Excess count detection
   is an important part of public health surveillance.
-date-released: '2025-06-04'
+date-released: '2025-06-06'
 keywords:
   - Deutschland
   - Germany
@@ -26,10 +26,10 @@ keywords:
   - Übersterblichkeit
   - Generalized Linear Models
 message: Cite me!
-url: ''
+url: https://robert-koch-institut.github.io/excode/
 license: GPL-3.0
-doi: 10.5281/zenodo.15322133
-version: '2025-06-04T16:58:51+02:00'
+doi: 10.5281/zenodo.15609781
+version: v0.0.0.9000
 authors:
   - family-names: Zacher
     given-names: Benedikt
