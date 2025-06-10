@@ -20,7 +20,7 @@ Documentation
 <br> 
 
 **Cite**  
-Zacher, B., & Vietor, A. (2025). excode: Excess Count Detection in Epidemiological Time Series. Zenodo. [https://doi.org/10.5281/zenodo.15322133](https://doi.org/10.5281/zenodo.15322133)
+Zacher, B., & Vietor, A. (2025). excode: Excess Count Detection in Epidemiological Time Series. Zenodo. [https://doi.org/10.5281/zenodo.15609781](https://doi.org/10.5281/zenodo.15609781)
 
 
 
@@ -40,7 +40,7 @@ install this package.
 
 ``` commandline
 library(devtools)
-install_github("robert-koch-institut/Excess_count_detection_for_epidemiological_time_series")
+install_github("robert-koch-institut/excode",subdir = "software")
 ```
 
 ## Overview
