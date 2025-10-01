@@ -2,6 +2,7 @@
 #'
 #' @slot name Name of the model. Must be one of c("FarringtonNoufaily", "Harmonic", "Custom", "MultiState").
 #' @slot shared_params Indicates whether model parameters are shared across multiple time series.
+#' @slot intercept TRUE if the model should include an intercept, FALSE otherwise.
 #' @slot coefficients Coefficients of a fitted model.
 #' @slot failed_optim TRUE if an error occured during model fitting.
 #'
@@ -9,9 +10,12 @@
 setClass("excodeFormula",
   slots = c(
     name = "character",
+    params = "character",
+    intercept = "logical",
     shared_params = "logical",
     coefficients = "numeric",
-    failed_optim = "numeric"
+    failed_optim = "numeric",
+    time_trend = "character"
   )
 )
 
@@ -79,31 +83,6 @@ setClass("Harmonic",
 )
 
 
-#' This class is a container for the parameterization of Spline models. This class is experimental and not recommended for use!
-#'
-#' @slot df_season Degrees of freedom for spline modeling seasonality. This class uses cubic splines, which are not recommended to model periodic patterns.
-#' @slot df_trend Degrees of freedom for spline modeling the time trend
-#' @slot timeTrend Indicates whether a time trend should be included in the model.
-#' @slot timepoints_per_unit Number of time points within the considered time unit (e.g. 52 for weekly observations in a year).
-#' @slot offset TRUE if an offset should be included in the model.
-#' @slot formula_bckg A formula which models the 'normal' (background) states.
-#' @slot formula A formula which models which includes variable(s) to model 'excess' state(s).
-#'
-#' @exportClass excodeFormula
-setClass("Splines",
-  contains = "excodeFormula",
-  slots = c(
-    df_season = "numeric",
-    df_trend = "numeric",
-    timepoints_per_unit = "numeric",
-    offset = "logical",
-    formula_bckg = "character",
-    formula = "character"
-  ),
-  prototype = list(
-    name = "Splines"
-  )
-)
 
 #' Prints description of Harmonic object
 #'
@@ -114,13 +93,7 @@ setMethod(f = "show", signature = c("Harmonic"), function(object) {
 })
 
 
-#' Prints description of Splines object
-#'
-#' @keywords internal
-#' @noRd
-setMethod(f = "show", signature = c("Splines"), function(object) {
-  cat("excodeFormula: ", is(object)[1], "\n", sep = "")
-})
+
 
 #' This class is a container for the parameterization of the Mean models.
 #'
@@ -195,7 +168,6 @@ setMethod(f = "show", signature = c("Custom"), function(object) {
 #'
 #' @slot nStates The number of states of the model.
 #' @slot data A data.frame containing variables which are used to model case counts. All variables in the data.frame will be used in the model. The data.frame has to have the same number of rows as time points in the time series.
-#' @slot intercept TRUE if the model should include an intercept, FALSE otherwise.
 #' @slot timepoints_per_unit Number of time points within the considered time unit (e.g. 52 for weekly observations in a year).
 #' @slot offset TRUE if an offset should be included in the model.
 #' @slot formula_bckg A formula which models the 'normal' (background) states.
@@ -208,7 +180,7 @@ setClass("MultiState",
   slots = c(
     nStates = "numeric",
     data = "data.frame",
-    intercept = "logical",
+    surv_ts = "data.frame",
     timepoints_per_unit = "numeric",
     offset = "logical",
     formula_bckg = "character",
@@ -243,6 +215,7 @@ setMethod(f = "show", signature = c("MultiState"), function(object) {
 #' @param noPeriods Integer. Number of levels in the factor which creates bins in each year to model seasonal patterns. Only used in 'FarringtonNoufaily' models. Default is 10.
 #' @param w Integer. The number of weeks before and after the current week to include in the bin which contains the respective week in each year. Only used in 'FarringtonNoufaily' models. Default is 3.
 #' @param timeTrend Logical. Indicates whether a time trend should be included in the model. Used in 'Mean', 'Harmonic' and 'FarringtonNoufaily' models. Default is TRUE.
+#' @param time_trend Character, that specifies the time trend that should be used. One of c('Linear', 'Spline1', 'Spline2', 'None'). Default is 'Linear'.
 #' @param intercept Logical. TRUE if the model should include an intercept, FALSE otherwise. Only used with 'MultiState' models.Default is TRUE.
 #' @param data data.frame. A data.frame containing variables which are used to model case counts. All variables in the data.frame will be used in the model. The data.frame has to have the same number of rows as time points in the time series. Default is NULL.
 #' @param df_season Integer. Degrees of freedom for spline modeling seasonality. This class uses cubic splines, which are not recommended to model periodic patterns.  Only used for 'Splines' models. Default is 4.
@@ -264,10 +237,10 @@ excodeFormula <- function(name,
                           S = 1, timepoints_per_unit = 52,
                           noPeriods = 10, w = 3,
                           timeTrend = TRUE,
+                          time_trend = "Linear",
                           intercept = TRUE,
                           data = NULL,
-                          df_season = 4,
-                          df_trend = 1,
+                          surv_ts = data.frame(),
                           nStates = NULL,
                           shared_params = FALSE,
                           offset = FALSE) {
@@ -279,6 +252,7 @@ excodeFormula <- function(name,
   w <- as.numeric(w)
   shared_params <- as.logical(shared_params)
   timeTrend <- as.logical(timeTrend)
+  time_trend <- as.character(time_trend)
   if (!is.null(data)) {
     data <- as.data.frame(data)
   } else if (name == "Custom" & is.null(data)) {
@@ -288,59 +262,87 @@ excodeFormula <- function(name,
   }
 
   obj <- NULL
-
+  spline_params <- ""
+  time_trend_orig <- time_trend
+  if(length(grep("Spline", time_trend))>0) {
+    n_knots <- as.numeric(gsub("Spline", "", time_trend))
+    spline_params <- paste0("t_spline", 1:(n_knots+1))
+    time_trend <- "Spline"
+  }
+  params_time <- switch(time_trend,
+                   Linear = "timepoint",
+                   Spline = spline_params,
+                   None = NULL)
+  time_trend <- time_trend_orig
+  params <- c(ifelse(intercept, "1", "0"), params_time)
   if (name == "Mean") {
+    params <- c(params, "offset(log(population))")
     obj <- new(name,
       name = name,
-      timeTrend = timeTrend, timepoints_per_unit = timepoints_per_unit,
+      timeTrend = timeTrend, 
+      time_trend = time_trend,
+      params = params,
+      intercept = intercept,
+      timepoints_per_unit = timepoints_per_unit,
       offset = offset, shared_params = shared_params,
       coefficients = as.numeric(NA),
       failed_optim = failed_optim
     )
   } else if (name == "Harmonic") {
+    params <- c(params, 
+                paste0("sin", 1:S), paste0("cos", 1:S), 
+                "offset(log(population))")
     obj <- new(name,
       name = name, S = S,
-      timeTrend = timeTrend, timepoints_per_unit = timepoints_per_unit,
+      timeTrend = timeTrend, 
+      time_trend = time_trend,
+      params = params,
+      intercept = intercept,
+      timepoints_per_unit = timepoints_per_unit,
       offset = offset, shared_params = shared_params,
       coefficients = as.numeric(NA),
       failed_optim = failed_optim
     )
   } else if (name == "FarringtonNoufaily") {
+    params <- c(params, "seasgroups", 
+                "offset(log(population))")
     obj <- new(name,
       name = name, noPeriods = noPeriods,
-      w = w, timeTrend = timeTrend, timepoints_per_unit = timepoints_per_unit,
+      w = w, timeTrend = timeTrend, 
+      time_trend = time_trend,
+      params = params,
+      intercept = intercept,
+      timepoints_per_unit = timepoints_per_unit,
       offset = offset, shared_params = shared_params,
       coefficients = as.numeric(NA),
       failed_optim = failed_optim
     )
   } else if (name == "Custom") {
+    params <- c(colnames(data), "offset(log(population))")
     obj <- new(name,
       name = name, data = data,
+      params = params,
+      intercept = intercept,
       timepoints_per_unit = timepoints_per_unit, offset = offset, shared_params = shared_params,
       coefficients = as.numeric(NA),
       failed_optim = failed_optim
     )
-  } else if (name == "Splines") {
-    obj <- new(name,
-      name = name, df_season = df_season,
-      df_trend = df_trend, timepoints_per_unit = timepoints_per_unit,
-      offset = offset, shared_params = shared_params,
-      coefficients = as.numeric(NA),
-      failed_optim = failed_optim
-    )
   } else if (name == "MultiState") {
+    params <- c(colnames(data), "offset(log(population))")
     obj <- new(name,
       name = name,
       nStates = as.numeric(nStates),
       intercept = intercept,
       data = data,
+      surv_ts = surv_ts,
+      params = params,
       timepoints_per_unit = timepoints_per_unit,
       offset = offset, shared_params = shared_params,
       coefficients = as.numeric(NA),
       failed_optim = failed_optim
     )
   } else {
-    stop("name must be on of c(Mean, Harmonic, FarringtonNoufaily, Custom)\n")
+    stop("name must be on of c(Mean, Harmonic, FarringtonNoufaily, Custom, MultiState)\n")
   }
 
   obj

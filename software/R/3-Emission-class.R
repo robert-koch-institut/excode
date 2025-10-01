@@ -11,7 +11,9 @@ setClass("Emission",
     name = "character",
     mu = "matrix",
     mu0 = "numeric",
-    mu1 = "numeric"
+    mu1 = "numeric",
+    excode_formula = "excodeFormula",
+    glm = "glm"
   )
 )
 
@@ -27,8 +29,7 @@ setClass("Emission",
 setClass("EmissionGLMPoisson",
   contains = "Emission",
   slots = c(
-    distribution = "Poisson",
-    excode_formula = "excodeFormula"
+    distribution = "Poisson"
   )
 )
 
@@ -44,8 +45,7 @@ setClass("EmissionGLMPoisson",
 setClass("EmissionGLMNegBinom",
   contains = "Emission",
   slots = c(
-    distribution = "NegBinom",
-    excode_formula = "excodeFormula"
+    distribution = "NegBinom"
   )
 )
 
@@ -60,21 +60,25 @@ setClass("EmissionGLMNegBinom",
 #'
 #' @export
 Emission <- function(distribution, excode_formula, initial_mu = NULL) {
-  formula_bckg <- createFormula(distribution, excode_formula)
+  formula_bckg <- create_formula(distribution, excode_formula)
   formula <- paste0(formula_bckg, " + state")
   excode_formula@formula <- formula
   excode_formula@formula_bckg <- formula_bckg
-
+  empty_glm <- list()
+  class(empty_glm) <- "glm"
+  
   obj <- NULL
   if (!is.null(initial_mu)) {
     obj <- new(paste0("EmissionGLM", is(distribution)[1]),
       distribution = distribution,
-      excode_formula = excode_formula, mu = initial_mu
+      excode_formula = excode_formula, mu = initial_mu,
+      glm=empty_glm
     )
   } else {
     obj <- new(paste0("EmissionGLM", is(distribution)[1]),
       distribution = distribution,
-      excode_formula = excode_formula
+      excode_formula = excode_formula,
+      glm=empty_glm
     )
   }
 }
@@ -99,6 +103,41 @@ setGeneric("updateEmission", function(emission, dat, omega) standardGeneric("upd
 
 
 
+#' @title Returns Anscombe residuals for a fitted Emission.
+#'
+#' @param emission An \code{\linkS4class{Emission}} object.
+#' @returns A vector containing the Anscombe residuals for the fitted baseline state.
+#'
+#' @seealso \code{\linkS4class{Emission}}
+#'
+#' @keywords internal
+#' @noRd
+setGeneric("anscombe_residuals", function(emission, model_data) standardGeneric("anscombe_residuals"))
+
+setMethod("anscombe_residuals",
+          signature = c("EmissionGLMPoisson", "data.frame"),
+          function(emission, model_data) {
+            rA <- NULL
+            mu <- model_data$mu[model_data$state==0]
+            observed <- model_data$response[model_data$state==0]
+            phi <- max(c(1, summary(emission@glm)$dispersion))
+            numer <- 3 * (observed^(2/3) - mu^(2/3))
+            denom <- 2 * sqrt(phi * mu^(1/3))
+            rA <- numer / denom
+            as.vector(rA)
+          }
+)
+
+
+setMethod("anscombe_residuals",
+          signature = c("EmissionGLMNegBinom", "data.frame"),
+          function(emission, model_data) {
+            rA <- as.numeric(rep(NA, length(which(model_data$state==0))))
+            rA
+          }
+)
+
+
 #' @title Returns estimated parameters of an excodeFamily.
 #'
 #' @param emission An \code{\linkS4class{Emission}} object.
@@ -111,17 +150,18 @@ setGeneric("updateEmission", function(emission, dat, omega) standardGeneric("upd
 setGeneric("summary_emission", function(emission) standardGeneric("summary_emission"))
 
 setMethod("summary_emission",
-  signature = c("Emission"),
-  function(emission) {
-    family_df <- summary_family(emission@distribution)
-    # emission_df <- data.frame(mu0=emission@mu0,
-    #                          mu1=emission@mu1)
-    emission_df <- data.frame(emission@mu)
-    names(emission_df) <- paste0("mu", 0:(ncol(emission_df) - 1))
-    emission_summary <- emission_df
-    if (!is.null(family_df)) {
-      emission_summary <- cbind(emission_summary, family_df)
-    }
-    emission_summary
-  }
+          signature = c("Emission"),
+          function(emission) {
+            family_df <- summary_family(emission@distribution)
+            # emission_df <- data.frame(mu0=emission@mu0,
+            #                          mu1=emission@mu1)
+            emission_df <- data.frame(emission@mu)
+            names(emission_df) <- paste0("mu", 0:(ncol(emission_df) - 1))
+            emission_summary <- emission_df
+            if (!is.null(family_df)) {
+              emission_summary <- cbind(emission_summary, family_df)
+            }
+            emission_summary
+          }
 )
+

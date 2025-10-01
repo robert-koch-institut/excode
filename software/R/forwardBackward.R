@@ -114,24 +114,7 @@ getGammaXsi <- function(hmm, modelData, emissionProb) {
 
 
 forwardBackward <- function(hmm, modelData, emissionProb) {
-  nStates <- length(unique(modelData$state))
-  modelDataById <- tapply(1:nrow(modelData), INDEX = modelData$id, identity)
-  emissionProb <- as.vector(emissionProb)
-  modelDataById <- modelDataById[order(sapply(modelDataById, min))]
-  hmm_expectation <- list()
-  for (i in 1:length(modelDataById)) {
-    # print(i)
-    # print(modelDataById[[i]])
-    hmm_expectation[[i]] <- getGammaXsi(
-      hmm,
-      modelData[sort(modelDataById[[i]]), ],
-      matrix(emissionProb[modelDataById[[i]]], ncol = nStates)
-    )
-  }
-
-  return(list(
-    LogLik = sum(sapply(hmm_expectation, function(x) x$LogLik)),
-    gamma = do.call("rbind", lapply(hmm_expectation, function(x) x$gamma)),
-    xsi = unlist(lapply(hmm_expectation, function(x) x$xsi), recursive = F)
-  ))
+  getGammaXsi(hmm,
+              modelData, 
+              emissionProb)
 }

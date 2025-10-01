@@ -1,21 +1,118 @@
-#' @title Detect excess counts from single or multiple epidemiological time series. Internal function which is applied to a surveillance sts time series.
+#' @title Detect Excess Counts in Epidemiological Time Series
 #'
-#' @param surv_ts A surveillance time series (sts) object created using the surveillance package.
-#' @param excode_model An object of class \code{\linkS4class{excodeModel}} which specifies the model parameters and structure
-#' @param timepoints integer or sequence of integers which specifies the time points for which excess count detection should be performed
-#' @param learning_type Indicates the type of learning, one of c("unsupervised", "semisupervised", "supervised")
-#' @param maxIter Maximal number of iteration for EM-algorithm.
-#' @param verbose Logical indicating wehther progress should be printed.
-#' @param return_full_model If FALSE (default) only results for 'timepoint' are returend. If TRUE, the complete time series used for model fitting is returned by the function.
-#' @param past_timepoints_not_included Past time points not included in initialization.
-#' @param time_units_back Number of years to be used for model fitting.
+#' @description
+#' Fit an \code{\linkS4class{excodeModel}} to epidemiological surveillance data
+#' and return a fitted model (with posterior probabilities, fitted means, and
+#' related diagnostics) for detecting excess counts. Supports single or multiple
+#' time series provided as a \code{data.frame} only.
 #'
-#' @seealso \code{\linkS4class{excodeModel}}
+#' @details
+#' The function currently accepts a single \code{data.frame} as the surveillance
+#' time series input. The \code{data.frame} must contain:
+#' \itemize{
+#'   \item \strong{date}: aggregation date;
+#'   \item \strong{observed}: observed case counts;
+#'   \item \strong{id}: identifier of the time series (use a single id for one series);
+#'   \item \strong{offset} (optional): e.g., population at risk;
+#'   \item \strong{state} (optional): periods with special events (e.g., 0 = normal,
+#'         1 = excess, \code{NA} = unknown).
+#' }
 #'
-#' @keywords internal
-#' @noRd
-run_excode_internal <- function(surv_ts, excode_model, timepoints, learning_type = "unsupervised", maxIter = 100,
-                                verbose = FALSE, return_full_model = FALSE,past_timepoints_not_included  = 26, time_units_back = 5) {
+#' It is no longer possible to pass \code{sts} objects (from the
+#' \pkg{surveillance} package) or lists of such objects. These will result in an
+#' error. A matrix-like collection of \code{sts} objects (e.g.,
+#' \code{surveillance::measlesDE}) is also not supported.
+#'
+#' If the model's emission uses a \code{MultiState} \code{excodeFormula} that
+#' already contains a \code{surv_ts} slot, \code{run_excode()} will use that data
+#' and (if not supplied) set \code{timepoints} accordingly.
+#'
+#' @param excode_model An object of class \code{\linkS4class{excodeModel}}
+#' specifying the model family and formula as well as initial parameters/structure.
+#' @param surv_ts A \code{data.frame} as specified under \emph{Details}.
+#' @param timepoints An \code{integer} or integer vector specifying the time points
+#' at which excess-count detection should be performed. If \code{NULL} and the model
+#' embeds a \code{surv_ts} via a \code{MultiState} formula, an appropriate default is chosen.
+#' @param maxIter \code{integer}. Maximum number of EM iterations. Defaults to \code{100}.
+#' @param verbose \code{logical}. Print progress during execution. Defaults to \code{FALSE}.
+#' @param return_full_model \code{logical}. If \code{FALSE} (default), return only results
+#' for the specified \code{timepoints}. If \code{TRUE}, return the complete time series used
+#' for fitting.
+#' @param past_timepoints_not_included \code{integer}. Number of most recent past time points
+#' to exclude from initialization. Defaults to \code{26}. For daily data this excludes the past
+#' \emph{x} days; for weekly data, the past \emph{x} weeks.
+#' @param time_units_back \code{integer}. How many past time \emph{units} to include when fitting.
+#' Default \code{5}. For example, if \code{timepoints_per_unit = 52} (weekly data, units = years)
+#' in the \code{excodeFormula}, then \code{5} corresponds to the past 5 years; if
+#' \code{timepoints_per_unit = 7} (daily data, units = weeks), then \code{5} corresponds to the
+#' past 5 weeks.
+#'
+#' @returns A fitted \code{\linkS4class{excodeModel}} object containing, for the requested
+#' time points (or the full series if \code{return_full_model = TRUE}), posterior state
+#' probabilities, fitted means, p-values, Anscombe residuals, convergence information, and
+#' information criteria.
+#'
+#' @seealso \code{\linkS4class{excodeModel}}, \code{\linkS4class{excodeFamily}}, \code{\linkS4class{excodeFormula}}
+#'
+#' @examples
+#' # Create a Poisson harmonic model
+#' excode_family_pois <- excodeFamily("Poisson")
+#' excode_formula_har <- excodeFormula("Harmonic")
+#' excode_har_pois <- excodeModel(excode_family_pois, excode_formula_har)
+#'
+#' # Example: data.frame as input
+#' data(shadar_df)
+#' result_shadar_har <- run_excode(excode_har_pois, shadar_df, 209:295)
+#'
+#' @rdname run_excode
+#' @export
+run_excode <- function(excode_model, surv_ts=NULL, timepoints=NULL,  maxIter = 100,
+                                verbose = FALSE, return_full_model = FALSE,
+                                past_timepoints_not_included  = 26, time_units_back = 5) {
+  
+  
+  v <- validate_run_excode_inputs(excode_model, surv_ts, timepoints,
+                                   maxIter, verbose, return_full_model,
+                                   past_timepoints_not_included, time_units_back)
+  surv_ts  <- v$surv_ts
+  timepoints <- v$timepoints
+  maxIter  <- v$maxIter
+  verbose  <- v$verbose
+  return_full_model <- v$return_full_model
+  past_timepoints_not_included <- v$past_timepoints_not_included
+  time_units_back <- v$time_units_back
+  
+  # (keep your existing MultiState override; the warnings above explain precedence)
+  if (any(is(excode_model@emission@excode_formula) == "MultiState")) {
+    if (nrow(excode_model@emission@excode_formula@surv_ts) > 0) {
+      surv_ts <- excode_model@emission@excode_formula@surv_ts
+      timepoints <- nrow(surv_ts)
+      # Re-run minimal checks after override
+      v2 <- validate_run_excode_inputs(excode_model, surv_ts=NULL, timepoints,
+                                        maxIter, verbose, return_full_model,
+                                        past_timepoints_not_included, time_units_back)
+      #surv_ts <- v2$surv_ts
+      timepoints <- v2$timepoints
+    }
+  }
+  
+  # If still no surv_ts, that's an error
+  if (is.null(surv_ts)) {
+    stop("No `surv_ts` provided and none embedded in a MultiState formula.")
+  }
+  
+  if(any(is(excode_model@emission@excode_formula) == "MultiState")) {
+    if(nrow(excode_model@emission@excode_formula@surv_ts)>0) {
+      surv_ts <- excode_model@emission@excode_formula@surv_ts
+      timepoints <- nrow(surv_ts)
+    }
+  }
+  if (!any(names(surv_ts) == "state")) {
+    surv_ts$state <- NA
+  }
+  if (!any(names(surv_ts) == "offset")) {
+    surv_ts$offset <- matrix(rep(1, nrow(surv_ts)), ncol = 1)
+  }
   
   excode_model_init <- excode_model
 
@@ -47,19 +144,10 @@ run_excode_internal <- function(surv_ts, excode_model, timepoints, learning_type
           past_weeks_not_included_init = past_timepoints_not_included
         )
 
-        if (learning_type %in% c("unsupervised", "semisupervised")) {
           excode_model_fit <- fitUnsupervised(excode_model, modelData, transMat_init,
-            learning_type = learning_type, maxIter,
-            verbose, time_units_back = time_units_back
-          )
-        } else if (learning_type == "supervised") {
-          excode_model_fit <- fitSupervised(excode_model, modelData)
-        } else {
-          stop("learning_type must be one of: unsupervised, semisupervised or supervised.\n")
-        }
-
-
+             maxIter, verbose, time_units_back = time_units_back)
         NA
+
       },
       error = function(e) {
         warning("Error fitting model at position ", k, ": ", as.character(e), ".")
@@ -73,12 +161,12 @@ run_excode_internal <- function(surv_ts, excode_model, timepoints, learning_type
       if (is.null(excode_model_fit)) {
         excode_model_fit <- list(hmm = excode_model_init)
       }
-      if (!is.null(modelData)) {
-        ts_len <- length(which(excode_model_fit$model$state == 0))
-      }
-
+      ts_len <- nrow(excode_model_fit$hmm@emission@excode_formula@surv_ts)
+      
       nStates <- excode_model_fit$hmm@nStates
-      excode_model_fit$hmm@posterior <- matrix(rep(NA, ts_len * nStates), ncol = nStates)
+      posterior <- matrix(rep(NA, ts_len * nStates), ncol = nStates)
+      colnames(posterior) <- paste0("posterior", 0:(nStates-1))
+      excode_model_fit$hmm@posterior <- posterior
       excode_model_fit$hmm@alpha <- matrix(rep(NA, 2 * ts_len * nStates), ncol = nStates)
 
       excode_model_fit$hmm@converged <- rep(FALSE, ts_len)
@@ -92,7 +180,7 @@ run_excode_internal <- function(surv_ts, excode_model, timepoints, learning_type
 
       excode_model_fit$hmm@timepoint_fit <- rep(as.numeric(NA), ts_len)
       excode_model_fit$hmm@timepoint <- rep(as.numeric(NA), ts_len)
-      excode_model_fit$hmm@date <- rep(as.numeric(NA), ts_len)
+      excode_model_fit$hmm@date <- rep(as.Date(NA), ts_len)
       excode_model_fit$hmm@observed <- rep(as.numeric(NA), ts_len)
       excode_model_fit$hmm@emission@mu0 <- rep(as.numeric(NA), ts_len)
       excode_model_fit$hmm@emission@mu1 <- rep(as.numeric(NA), ts_len)
@@ -100,8 +188,7 @@ run_excode_internal <- function(surv_ts, excode_model, timepoints, learning_type
 
       excode_model_fit$hmm@population <- rep(as.numeric(NA), ts_len)
       excode_model_fit$hmm@error <- rep(curr_error, ts_len)
-      excode_model_fit$hmm@method <- rep(as.character(NA), ts_len)
-
+      
       nb_size_NA <- data.frame(nb_size = rep(as.numeric(NA), ts_len))
       excode_model_fit$hmm@emission@distribution <-
         set_nb_size(
@@ -111,6 +198,7 @@ run_excode_internal <- function(surv_ts, excode_model, timepoints, learning_type
 
 
       excode_model_fit$hmm@pval <- rep(as.numeric(NA), ts_len)
+      excode_model_fit$hmm@anscombe_residual <- rep(as.numeric(NA), ts_len)
     } else {
       nStates <- length(unique(excode_model_fit$model$state))
       index_0 <- which(excode_model_fit$model$state == 0)
@@ -192,7 +280,11 @@ run_excode_internal <- function(surv_ts, excode_model, timepoints, learning_type
         excode_model_fit$hmm@emission@distribution,
         excode_model_fit$hmm
       )
-      excode_model_fit$hmm@method <- rep(learning_type, length(index_0))
+      
+      excode_model_fit$hmm@anscombe_residual <- anscombe_residuals(
+        excode_model_fit$hmm@emission, 
+        excode_model_fit$model
+      )
     }
 
 
@@ -225,7 +317,7 @@ run_excode_internal <- function(surv_ts, excode_model, timepoints, learning_type
 
 
       excode_model_fit$hmm@pval <- excode_model_fit$hmm@pval[ts_len]
-      excode_model_fit$hmm@method <- excode_model_fit$hmm@method[ts_len]
+      excode_model_fit$hmm@anscombe_residual <- excode_model_fit$hmm@anscombe_residual[ts_len]
       excode_model_fit$hmm@error <- excode_model_fit$hmm@error[ts_len]
 
       excode_model_fit$hmm@converged <- excode_model_fit$hmm@converged[ts_len]
@@ -327,10 +419,12 @@ merge_results <- function(excode_model_fit_list) {
         excode_model_fit@pval,
         excode_model_fit_list[[i]]@pval
       )
-      excode_model_fit@method <- c(
-        excode_model_fit@method,
-        excode_model_fit_list[[i]]@method
+      
+      excode_model_fit@anscombe_residual <- c(
+        excode_model_fit@anscombe_residual,
+        excode_model_fit_list[[i]]@anscombe_residual
       )
+      
 
       excode_model_fit@emission@distribution <-
         merge_excode_family_result(
@@ -346,146 +440,234 @@ merge_results <- function(excode_model_fit_list) {
 
 
 
-#' @title Detect Excess Counts in Epidemiological Time Series
-#'
-#' @description
-#' This function fits an `excodeModel` to epidemiological surveillance data
-#' and returns the estimated parameters of an `excodeFamily`. It can handle
-#' single or multiple time series.
-#'
-#' @details
-#' This function currently accepts a single `sts` object, a `data.frame`, or a **named list of `sts` objects**.
-#' However, a **an `sts` object matrix** such as the `measlesDE` dataset from the surveillance package is currently not supported and will result in an error.
-#'
-#' @param surv_ts A surveillance time series input. This can be one of the following:
-#' \itemize{
-#'   \item A \code{data.frame}, which can represent either a single or multiple time series.
-#'         This data.frame contains the following columns:
-#'         \itemize{
-#'           \item \strong{date}: The date of aggregation.
-#'           \item \strong{observed}: The observed number of cases.
-#'           \item \strong{id}: The identifier of the time series (even if only one).
-#'           \item \strong{offset} (optional): For example, the susceptible population.
-#'           \item \strong{state} (optional): Indicates periods with special events such as outbreaks
-#'             (e.g., 0 = normal, 1 = excess cases, NA = unknown).
-#'         }
-#'   \item A single \code{sts} object containing one timeseries.
-#'   \item A named list of \code{sts} objects, each representing a separate time series.
-#' }
-#' @param excode_model An object of class \code{\linkS4class{excodeModel}} which specifies the model parameters and structure
-#' @param timepoints An \code{integer} or a sequence of integers specifying
-#' the time points for which excess count detection should be performed.
-#' @param learning_type  A \code{character} string indicating the type of learning.
-#' Must be one of \code{c("unsupervised", "semisupervised", "supervised")}.
-#' @param maxIter An \code{integer} specifying the maximum number of iterations
-#' for the Expectation-Maximization (EM) algorithm. Defaults to \code{100}.
-#' @param verbose A \code{logical} indicating whether progress should be printed
-#' during execution. Defaults to \code{FALSE}.
-#' @param return_full_model A \code{logical} indicating whether to return the full
-#' model output. If \code{FALSE} (default), only results for the specified
-#' \code{timepoints} are returned. If \code{TRUE}, the complete time series used
-#' for model fitting is returned.
-#' @param past_timepoints_not_included An \code{integer} specifying the number of past
-#' time points to exclude from initialization. Defaults to \code{26}. If your data is daily then the past x days are excluded, for weekly data the past x weeks are excluded.
-#' @param time_units_back An \code{integer} specifying how many past time units to include when fitting the model.
-#' The default is \code{5}. For example, if \code{timepoints_per_unit = 52} (weekly data) was specified in excodeFormula,
-#' then this corresponds to using the past 5 years of data. If \code{timepoints_per_unit = 7} (daily data and the units are weeks) was specified in excodeFormula then time_units_back equal to \code{5} corresponds to the past 5 weeks.
-#'
-#' @returns Returns a fitted \code{\linkS4class{excodeModel}} object.
-#'
-#' @seealso \code{\linkS4class{excodeModel}}
-#' @rdname run_excode
-#'
-#' @examples
-#'
-#' # Creating a Poisson harmonic model for the examples
-#' excode_family_pois <- excodeFamily("Poisson")
-#' excode_formula_har <- excodeFormula("Harmonic")
-#' excode_har_pois <- excodeModel(
-#'   excode_family_pois,
-#'   excode_formula_har
-#' )
-#' # Example 1: Using data.frame as input time series
-#' data(shadar_df)
-#' result_shadar_har <- run_excode(shadar_df, excode_har_pois, 209:295)
-#'
-#'
-#' # Example 2: Using an sts object (from 'surveillance' package) as input time series
-#' library(surveillance)
-#' data(stsNewport)
-#' result_newport_har <- run_excode(stsNewport, excode_har_pois, 209:295)
-#'
-#' # Example 3: Using a named list of two sts objects as input
-#' stsShadar <- surveillance::sts(shadar_df$observed,
-#'   epoch = shadar_df$date,
-#'   state = shadar_df$state
-#' )
-#' named_list <- c("salmNewport" = stsNewport, "shadar" = stsShadar)
-#' result_list <- run_excode(
-#'   named_list,
-#'   excode_har_pois, 290
-#' )
-#'
-
-#' @export
-setGeneric("run_excode", function(surv_ts, excode_model, timepoints, learning_type = "unsupervised", maxIter = 100, verbose = FALSE, return_full_model = FALSE, past_timepoints_not_included = 26, time_units_back = 5) standardGeneric("run_excode"))
-
-
-#' Method for sts input
-#' Direct application of run_excode
-#' @rdname run_excode
-setMethod("run_excode",
-  signature = c("sts", "excodeModel"),
-  function(surv_ts, excode_model, timepoints, learning_type = "unsupervised", maxIter = 100, verbose = FALSE, return_full_model = FALSE, past_timepoints_not_included = 26, time_units_back = 5) {
-    run_excode_internal(surv_ts, excode_model, timepoints, learning_type, maxIter, verbose, return_full_model, past_timepoints_not_included, time_units_back)
+validate_run_excode_inputs <- function(excode_model,
+                                       surv_ts,
+                                       timepoints,
+                                       maxIter,
+                                       verbose,
+                                       return_full_model,
+                                       past_timepoints_not_included,
+                                       time_units_back) {
+  # 1) excode_model -----------------------------------------------------------
+  if (!methods::is(excode_model, "excodeModel")) {
+    stop("`excode_model` must be an S4 object of class 'excodeModel'.")
   }
-)
-
-#' Method for list of sts input
-#' Sorting the sts objects by name
-#' @rdname run_excode
-setMethod("run_excode",
-  signature = c("list", "excodeModel"),
-  function(surv_ts, excode_model, timepoints, learning_type = "unsupervised", maxIter = 100, verbose = FALSE, return_full_model = FALSE, past_timepoints_not_included = 26, time_units_back = 5) {
-    freqs <- sapply(surv_ts, function(x) x@freq) 
-    all_same <- length(unique(freqs)) == 1
-    if(!all_same){
-      stop("The sts objects in this list do not have the same freq parameter.")
+  required_slots <- c("emission", "transitions", "initial_prob")
+  miss_slots <- setdiff(required_slots, methods::slotNames(excode_model))
+  if (length(miss_slots)) {
+    stop("`excode_model` is missing required slot(s): ",
+         paste(miss_slots, collapse = ", "))
+  }
+  
+  # 2) surv_ts: only data.frame allowed (no sts or lists of sts) --------------
+  if (!is.null(surv_ts)) {
+    if (methods::is(surv_ts, "sts")) {
+      stop("`surv_ts` may not be an 'sts' object. Provide a data.frame instead.")
     }
-    run_excode_internal(surv_ts[sort(names(surv_ts))], excode_model, timepoints, learning_type, maxIter, verbose, return_full_model, past_timepoints_not_included, time_units_back)
+    if (is.list(surv_ts) && any(vapply(surv_ts, methods::is, logical(1), "sts"))) {
+      stop("Lists or matrices of 'sts' objects are not supported. Provide a data.frame.")
+    }
+    if (!is.data.frame(surv_ts)) {
+      stop("`surv_ts` must be a data.frame (or NULL if provided via MultiState formula).")
+    }
   }
-)
-#' Method for data.frame input
-#' Transformation of data.frame to sts object
-#' @rdname run_excode
-setMethod("run_excode",
-  signature = c("data.frame", "excodeModel"),
-  function(surv_ts, excode_model, timepoints, learning_type = "unsupervised", maxIter = 100, verbose = FALSE, return_full_model = FALSE, past_timepoints_not_included = 26, time_units_back = 5) {
-    if (!any(names(surv_ts) == "state")) {
-      if (learning_type %in% c("semisupervised", "supervised")) {
-        stop("Variable \'state\' must be provided with method \'", learning_type, "\'\n")
+  
+  # 3) timepoints --------------------------------------------------------------
+  if (!is.null(timepoints)) {
+    if (!is.numeric(timepoints)) stop("`timepoints` must be numeric (integer-like).")
+    if (anyNA(timepoints)) stop("`timepoints` may not contain NA.")
+    if (any(timepoints <= 0)) stop("`timepoints` must be positive (1-based indices).")
+    if (!all(timepoints == as.integer(timepoints))) {
+      warning("Coercing `timepoints` to integers.")
+      timepoints <- as.integer(round(timepoints))
+    } else {
+      timepoints <- as.integer(timepoints)
+    }
+    timepoints <- sort(unique(timepoints))
+  }
+  
+  # 4) scalars / types --------------------------------------------------------
+  chk_scalar_logical <- function(x, nm) {
+    if (!is.logical(x) || length(x) != 1 || is.na(x)) {
+      stop("`", nm, "` must be a single non-NA logical (TRUE/FALSE).")
+    }
+  }
+  chk_scalar_int <- function(x, nm, min_val = -Inf, allow_na = FALSE) {
+    if (length(x) != 1 || (!allow_na && is.na(x))) {
+      stop("`", nm, "` must be a single value.")
+    }
+    if (!is.numeric(x)) stop("`", nm, "` must be numeric (integer-like).")
+    if (x != as.integer(x)) {
+      warning("Coercing `", nm, "` to integer.")
+      x <<- as.integer(round(x))
+    } else {
+      x <<- as.integer(x)
+    }
+    if (!is.infinite(min_val) && x < min_val) {
+      stop("`", nm, "` must be >= ", min_val, ".")
+    }
+    return(x)
+  }
+  
+  maxIter                      <- chk_scalar_int(maxIter, "maxIter", min_val = 1)
+  past_timepoints_not_included <- chk_scalar_int(past_timepoints_not_included,
+                                                 "past_timepoints_not_included",
+                                                 min_val = 0)
+  time_units_back              <- chk_scalar_int(time_units_back, "time_units_back",
+                                                 min_val = 1)
+  chk_scalar_logical(verbose, "verbose")
+  chk_scalar_logical(return_full_model, "return_full_model")
+  
+  # 5) embedded surv_ts via MultiState excodeFormula --------------------------
+  has_multistate <- FALSE
+  try({
+    has_multistate <- any(methods::is(excode_model@emission@excode_formula, "MultiState"))
+  }, silent = TRUE)
+  
+  if (has_multistate) {
+    embedded_df <- NULL
+    try({
+      embedded_df <- excode_model@emission@excode_formula@surv_ts
+    }, silent = TRUE)
+    if (!is.null(embedded_df) && NROW(embedded_df) > 0) {
+      if (!is.null(surv_ts)) {
+        warning("Both `surv_ts` and a MultiState-embedded `surv_ts` were provided; ",
+                "the embedded data will take precedence.")
       }
-      surv_ts$state <- NA
     }
-    surv_ts_list <- split(surv_ts, surv_ts$id)
-    for (i in 1:length(surv_ts_list)) {
-      offset <- matrix(rep(1, nrow(surv_ts_list[[i]])), ncol = 1)
-      if ("offset" %in% names(surv_ts_list[[i]])) {
-        offset <- matrix(surv_ts_list[[i]]$offset, ncol = 1)
-      }
-      timepoints_per_unit <- excode_model@emission@excode_formula@timepoints_per_unit
-      surv_ts_list[[i]] <- sts(surv_ts_list[[i]]$observed,
-        frequency = timepoints_per_unit,
-        epoch = surv_ts_list[[i]]$date,
-        state = surv_ts_list[[i]]$state,
-        population = offset
-      )
-    }
-    run_excode_internal(
-      surv_ts_list[sort(names(surv_ts_list))],
-      excode_model, timepoints, learning_type,
-      maxIter, verbose, return_full_model,
-      past_timepoints_not_included, time_units_back
-    )
   }
-)
+  
+  # 6) surv_ts column checks & normalization ----------------------------------
+  normalize_surv_ts <- function(df) {
+    req_cols <- c("date", "observed", "id")
+    miss <- setdiff(req_cols, names(df))
+    if (length(miss)) {
+      stop("`surv_ts` is missing required column(s): ", paste(miss, collapse = ", "))
+    }
+    
+    # date
+    if (!inherits(df$date, "Date")) {
+      if (inherits(df$date, "POSIXt")) {
+        df$date <- as.Date(df$date)
+      } else {
+        suppressWarnings({
+          try_date <- as.Date(df$date)
+        })
+        if (any(is.na(try_date))) {
+          stop("`surv_ts$date` must be Date-like. Failed to convert some entries.")
+        }
+        df$date <- try_date
+      }
+    }
+    
+    # observed
+    if (!is.numeric(df$observed)) stop("`surv_ts$observed` must be numeric.")
+    if (anyNA(df$observed)) stop("`surv_ts$observed` contains NA.")
+    if (any(df$observed < 0)) stop("`surv_ts$observed` must be >= 0.")
+    if (any(df$observed != as.integer(df$observed))) {
+      warning("`surv_ts$observed` is not integer; rounding to nearest integer.")
+      df$observed <- as.integer(round(df$observed))
+    }
+    
+    # id
+    if (!(is.character(df$id) || is.factor(df$id))) {
+      stop("`surv_ts$id` must be character or factor.")
+    }
+    df$id <- as.character(df$id)
+    
+    # offset
+    if (!("offset" %in% names(df))) {
+      message("No `offset` column; assuming offset = 1 for all rows.")
+      df$offset <- 1
+    }
+    if (!is.numeric(df$offset) || anyNA(df$offset) || any(df$offset < 1)) {
+      stop("`surv_ts$offset` must be >1 without NA.")
+    }
+    
+    # ---- STATE: strict rule: numeric and only 0 or NA -----------------------
+    if (!("state" %in% names(df))) {
+      message("No `state` column; creating `state = NA`.")
+      df$state <- NA_real_
+    }
+    # must be numeric, no coercions performed
+    if (!is.numeric(df$state)) {
+      stop("`surv_ts$state` must be numeric and contain only 0 or NA.")
+    }
+    # allow NA; all non-NA must be exactly 0
+    bad_state <- !is.na(df$state) & df$state != 0
+    if (any(bad_state)) {
+      stop("`surv_ts$state` must contain only 0 or NA (found: ",
+           paste(unique(df$state[bad_state]), collapse = ", "), ").")
+    }
+    # store as integer for consistency
+    df$state <- as.integer(ifelse(is.na(df$state), NA_integer_, 0L))
+    # -------------------------------------------------------------------------
+    
+    # duplicates & order
+    if (anyDuplicated(df[c("id","date")])) {
+      dup <- df[duplicated(df[c("id","date")]) | duplicated(df[c("id","date")], fromLast = TRUE),
+                c("id","date")]
+      stop("`surv_ts` has duplicate (id, date) rows. Example: ",
+           paste(utils::head(paste(dup$id, dup$date), 3), collapse = "; "), " …")
+    }
+    o <- order(df$id, df$date)
+    if (!identical(o, seq_len(NROW(df)))) {
+      warning("Sorting `surv_ts` by id, then date.")
+      df <- df[o, , drop = FALSE]
+    }
+    
+    # extra columns
+    extra <- setdiff(names(df), c("date","observed","id","offset","state"))
+    if (length(extra)) {
+      message("Additional columns in `surv_ts` will be passed through/ignored as appropriate: ",
+              paste(extra, collapse = ", "))
+    }
+    
+    df
+  }
+  
+  if (!is.null(surv_ts)) {
+    surv_ts <- normalize_surv_ts(surv_ts)
+  }
+  
+  # 7) timepoints vs data length ----------------------------------------------
+  if (!is.null(timepoints) && !is.null(surv_ts)) {
+    n <- NROW(surv_ts)
+    if (any(timepoints > n)) {
+      stop("Some `timepoints` (", paste(timepoints[timepoints > n], collapse = ", "),
+           ") exceed the number of rows in `surv_ts` (", n, ").")
+    }
+  }
+  
+  # 8) minimal history feasibility checks -------------------------------------
+  tpu <- NA_integer_
+  try({
+    tpu <- excode_model@emission@excode_formula@timepoints_per_unit
+  }, silent = TRUE)
+  if (!is.null(surv_ts) && length(tpu) == 1 && is.finite(tpu) && !is.na(tpu) && tpu > 0) {
+    required_history <- time_units_back * as.integer(tpu)
+    required_prefix  <- required_history
+    if (!is.null(timepoints)) {
+      bad <- timepoints <= required_prefix
+      if (any(bad)) {
+        warning("Some `timepoints` (", paste(timepoints[bad], collapse = ", "),
+                ") may have insufficient history for fitting (need > ",
+                required_prefix, " observations). Proceeding with available data.")
+      }
+    }
+  }
+  
+  # 9) Return normalized values ----------------------------------------------
+  list(
+    surv_ts  = surv_ts,
+    timepoints = timepoints,
+    maxIter = maxIter,
+    verbose = verbose,
+    return_full_model = return_full_model,
+    past_timepoints_not_included = past_timepoints_not_included,
+    time_units_back = time_units_back
+  )
+}
+
+
+

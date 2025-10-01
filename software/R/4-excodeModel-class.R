@@ -9,7 +9,6 @@
 #' @slot initial_prob Initial state probabilities of the hidden Markov model.
 #' @slot setBckgState Indicates whether a background state should be computed for model fitting. Background states are set to 0s and time points where the Anscombe residuals of the initial model are < 1.
 #' @slot id Name of the time series
-#' @slot method Method for parameter estimation, one of c("supervised", "unsupervised"). Default: "unsupervised".
 #' @slot converged Logical, indicating whether the EM-algorithm converged.
 #' @slot niter Maximum number of iterations for model fitting.
 #' @slot LogLik Log lokelihood of the fitted model.
@@ -38,7 +37,6 @@ setClass("excodeModel",
     initial_prob = "numeric",
     setBckgState = "logical",
     id = "character",
-    method = "character",
     converged = "logical",
     niter = "numeric",
     LogLik = "numeric",
@@ -47,6 +45,7 @@ setClass("excodeModel",
     posterior = "matrix",
     alpha = "matrix",
     pval = "numeric",
+    anscombe_residual = "numeric",
     timepoint_fit = "numeric",
     timepoint = "numeric",
     date = "Date",
@@ -159,7 +158,7 @@ updateTransInitProb <- function(excode_model, gamma, xsi, modelData) {
   log_dir2 <- 0
 
   transMat <- Reduce("+", xsi)
-  gammaSum_ind <- which(modelData$wtime != max(modelData$wtime) & modelData$state == 0)
+  gammaSum_ind <- which(modelData$timepoint != max(modelData$timepoint) & modelData$state == 0)
   # print(gammaSum_ind)
   gammaSum <- apply(gamma[gammaSum_ind, ], 2, sum)
   if (excode_model@transitions_prior) { # Update with prior weights
@@ -174,7 +173,7 @@ updateTransInitProb <- function(excode_model, gamma, xsi, modelData) {
     }
   }
 
-  initProb_ind <- which(modelData$wtime == 0 & modelData$state == 0)
+  initProb_ind <- which(modelData$timepoint == 0 & modelData$state == 0)
   initProb <- gamma[initProb_ind, ]
   if (length(initProb_ind) > 1) {
     initProb <- apply(initProb, 2, sum)
@@ -236,11 +235,12 @@ updateTransInitProb <- function(excode_model, gamma, xsi, modelData) {
 setMethod("summary",
   signature = c("excodeModel"),
   function(object, pars = c(
-             "posterior", "pval", "date", "timepoint",
-             "observed", "emission", "id", "BIC", "AIC"
+             "posterior", "pval", "anscombe_residual", "date", "timepoint",
+             "observed", "emission", "BIC", "AIC"
            ),
            prob_threshold = 0.5,
-           pval_threshold = 0.01,
+           pval_threshold = 0.05,
+           anscombe_threshold = 2,
            maxiter = 1000) {
     emission_df <- NULL
     posterior_df <- NULL
@@ -295,7 +295,7 @@ setMethod("summary",
       posterior_bound$timepoint <- posterior_bound$timepoint_fit
 
       res_df <- merge(res_df, posterior_bound,
-        by = c("timepoint_fit", "timepoint", "id"),
+        by = c("timepoint_fit", "timepoint"),
         all.x = TRUE
       )
 
@@ -303,12 +303,23 @@ setMethod("summary",
         object@emission@distribution,
         object, pval_threshold
       )
-      pval_bound$timepoint <- pval_bound$timepoint_fit
 
       res_df <- merge(res_df, pval_bound,
-        by = c("timepoint_fit", "timepoint", "id"),
+        by = c("timepoint_fit", "timepoint"),
         all.x = TRUE
       )
+      
+      anscombe_bound <- calcAnscombeBound(
+        object@emission@distribution,
+        object, anscombe_threshold
+      )
+      
+      res_df <- merge(res_df, anscombe_bound,
+                      by = c("timepoint_fit", "timepoint"),
+                      all.x = TRUE
+      )
+      res_df <- res_df[order(res_df$timepoint),]
+
     }
 
     if (remove_timpoint_fit) {
@@ -316,7 +327,7 @@ setMethod("summary",
     }
 
     if (object@nStates == 2) {
-      pars_order <- c(pars_order, "posterior_ub", "pval_ub")
+      pars_order <- c(pars_order, "posterior_ub", "pval_ub", "anscombe_ub")
       pars_order <- pars_order[pars_order != "posterior0"]
       pars_order[which(pars_order == "posterior1")] <- "posterior"
       names(res_df)[names(res_df) == "posterior1"] <- "posterior"

@@ -115,14 +115,15 @@ setMethod("calcPvalueBound",
   function(distribution, excode_model, alpha) {
     index <- which(excode_model@timepoint_fit == excode_model@timepoint)
     ub_pval <- qnbinom(alpha,
-      size = excode_model@emission@distribution@nb_size[index],
-      mu = excode_model@emission@mu0[index],
+      size = excode_model@emission@distribution@nb_size,
+      mu = excode_model@emission@mu0,
       lower.tail = FALSE
     )
     data.frame(
       pval_ub = ub_pval,
-      timepoint_fit = excode_model@timepoint_fit[index],
-      id = excode_model@id[index]
+      timepoint = excode_model@timepoint,
+      timepoint_fit = excode_model@timepoint_fit,
+      id = excode_model@id
     )
   }
 )
@@ -132,11 +133,52 @@ setMethod("calcPvalueBound",
   function(distribution, excode_model, alpha) {
     index <- which(excode_model@timepoint_fit == excode_model@timepoint)
 
-    ub_pval <- qpois(alpha, lambda = excode_model@emission@mu0[index], lower.tail = FALSE)
+    ub_pval <- qpois(alpha, lambda = excode_model@emission@mu0, lower.tail = FALSE)
+    phi <- max(c(1, summary(excode_model@emission@glm)$dispersion))
+    if (phi>Inf){
+      ub_pval <- qnbinom(alpha,
+                         excode_model@emission@mu0/(phi-1),
+                      1/phi,
+                      lower.tail=FALSE)
+    }
+    
     data.frame(
       pval_ub = ub_pval,
-      timepoint_fit = excode_model@timepoint_fit[index],
-      id = excode_model@id[index]
+      timepoint = excode_model@timepoint,
+      timepoint_fit = excode_model@timepoint_fit,
+      id = excode_model@id
     )
   }
+)
+
+
+setGeneric("calcAnscombeBound", function(distribution, excode_model, z) standardGeneric("calcAnscombeBound"))
+
+setMethod("calcAnscombeBound",
+          signature = c("Poisson", "excodeModel", "numeric"),
+          function(distribution, excode_model, z) {
+            
+            mu <- excode_model@emission@mu0
+            phi <- max(c(1, summary(excode_model@emission@glm)$dispersion))
+            anscombe_ub <- ( (2 * z * sqrt(phi * mu^(1/3)) / 3) + mu^(2/3) )^(3/2)
+            
+            data.frame(
+              anscombe_ub = floor(anscombe_ub),
+              timepoint = excode_model@timepoint,
+              timepoint_fit = excode_model@timepoint_fit,
+              id = excode_model@id
+            )
+          }
+)
+
+setMethod("calcAnscombeBound",
+          signature = c("NegBinom", "excodeModel", "numeric"),
+          function(distribution, excode_model, z) {
+            data.frame(
+              anscombe_ub = as.numeric(NA),
+              timepoint = excode_model@timepoint,
+              timepoint_fit = excode_model@timepoint_fit,
+              id = excode_model@id
+            )
+          }
 )

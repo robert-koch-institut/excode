@@ -1,11 +1,11 @@
-fitUnsupervised <- function(hmm, modelData, transMat_init, learning_type = "unsupervised", maxIter, verbose, time_units_back) {
+fitUnsupervised <- function(hmm, modelData, transMat_init, maxIter, verbose, time_units_back) {
   model_init <- NULL
   model <- NULL
   if (hmm@nStates == 2) {
     if (length(unique(modelData$id)) == 1 &
       !hmm@emission@excode_formula@shared_params) {
       hmm@emission@excode_formula@shared_params <- TRUE
-      formula_bckg <- createFormula(
+      formula_bckg <- create_formula(
         hmm@emission@distribution,
         hmm@emission@excode_formula
       )
@@ -15,12 +15,10 @@ fitUnsupervised <- function(hmm, modelData, transMat_init, learning_type = "unsu
     }
 
     model_init <- initGLM(hmm, modelData,
-      learning = learning_type,
       setBckgState = hmm@setBckgState
     )
   } else if (hmm@nStates > 2) {
     model_init <- init_glm_mutlistate(hmm, modelData,
-      learning = learning_type,
       setBckgState = hmm@setBckgState
     )
   }

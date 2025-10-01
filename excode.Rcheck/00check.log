@@ -1,0 +1,90 @@
+* using log directory 'S:/Projekte/Abt3_DeMoMo/Publikationen/excode/excode/excode.Rcheck'
+* using R version 4.4.1 (2024-06-14 ucrt)
+* using platform: x86_64-w64-mingw32
+* R was compiled by
+    gcc.exe (GCC) 13.2.0
+    GNU Fortran (GCC) 13.2.0
+* running under: Windows 10 x64 (build 19045)
+* using session charset: UTF-8
+* using options '--no-manual --as-cran'
+* checking for file 'excode/DESCRIPTION' ... OK
+* this is package 'excode' version '0.0.0.9000'
+* package encoding: UTF-8
+* checking package namespace information ... OK
+* checking package dependencies ... OK
+* checking if this is a source package ... OK
+* checking if there is a namespace ... OK
+* checking for executable files ... OK
+* checking for hidden files and directories ... OK
+* checking for portable file names ... OK
+* checking whether package 'excode' can be installed ... [15s] OK
+* checking installed package size ... OK
+* checking package directory ... OK
+* checking for future file timestamps ... NOTE
+unable to verify current time
+* checking 'build' directory ... OK
+* checking DESCRIPTION meta-information ... OK
+* checking top-level files ... OK
+* checking for left-over files ... OK
+* checking index information ... OK
+* checking package subdirectories ... OK
+* checking code files for non-ASCII characters ... OK
+* checking R files for syntax errors ... OK
+* checking whether the package can be loaded ... OK
+* checking whether the package can be loaded with stated dependencies ... OK
+* checking whether the package can be unloaded cleanly ... OK
+* checking whether the namespace can be loaded with stated dependencies ... OK
+* checking whether the namespace can be unloaded cleanly ... OK
+* checking loading without being on the library search path ... OK
+* checking dependencies in R code ... OK
+* checking S3 generic/method consistency ... OK
+* checking replacement functions ... OK
+* checking foreign function calls ... OK
+* checking R code for possible problems ... [16s] OK
+* checking Rd files ... OK
+* checking Rd metadata ... OK
+* checking Rd line widths ... OK
+* checking Rd cross-references ... OK
+* checking for missing documentation entries ... OK
+* checking for code/documentation mismatches ... OK
+* checking Rd \usage sections ... OK
+* checking Rd contents ... OK
+* checking for unstated dependencies in examples ... OK
+* checking contents of 'data' directory ... OK
+* checking data for non-ASCII characters ... OK
+* checking LazyData ... OK
+* checking data for ASCII and uncompressed saves ... OK
+* checking R/sysdata.rda ... OK
+* checking installed files from 'inst/doc' ... OK
+* checking files in 'vignettes' ... OK
+* checking examples ... [22s] OK
+Examples with CPU (user + system) or elapsed time > 5s
+            user system elapsed
+run_excode 17.63   0.75   18.55
+* checking for unstated dependencies in vignettes ... OK
+* checking package vignettes ... OK
+* checking re-building of vignette outputs ... ERROR
+Error(s) in re-building vignettes:
+  ...
+--- neu erzeugen von 'excode.Rmd' mit rmarkdown
+Warnung in dir.create(dirname(name), recursive = TRUE)
+  kann Verzeichnis 'S:\Projekte' nicht erzeugen, Grund 'Permission denied'
+Warnung in png(..., res = dpi, units = "in")
+  kann Datei 'S:/Projekte/Abt3_DeMoMo/Publikationen/excode/excode/excode.Rcheck/vign_test/excode/vignettes/excode_files/figure-html/example_mean_har_farr_model-1.png' nicht zum Schreiben öffnen
+Warnung in png(..., res = dpi, units = "in") opening device failed
+
+Quitting from lines 51-129 [example_mean_har_farr_model] (excode.Rmd)
+Fehler: Verarbeitung der Vignette 'excode.Rmd' mit folgender Diagnose fehlgeschlagen:
+kann png()-Gerät nicht starten
+--- Neu-erzeugen von 'excode.Rmd' fehlgeschlagen
+
+Zusammenfassung: Verarbeitung folgender Datei fehlgeschlagen:
+  'excode.Rmd'
+
+Fehler: Vignette re-building failed.
+Ausführung angehalten
+
+* checking for non-standard things in the check directory ... OK
+* checking for detritus in the temp directory ... OK
+* DONE
+Status: 1 ERROR, 1 NOTE
