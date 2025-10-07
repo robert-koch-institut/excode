@@ -268,24 +268,17 @@ setMethod("addDistrData",
 )
 
 setGeneric("prepareData", function(survts, hmm, time_point_to_consider,
-                                   id, time_units_back = as.numeric(5),
-                                   past_weeks_not_included_training = as.numeric(0),
-                                   past_weeks_not_included_state = as.numeric(26),
-                                   past_weeks_not_included_init = as.numeric(26)) {
+                                   id, time_units_back = as.numeric(5)) {
   standardGeneric("prepareData")
 })
 
 setMethod("prepareData",
   signature = c(
     "data.frame", "excodeModel", "ANY",
-    "ANY", "ANY", "ANY",
     "ANY", "ANY"
   ),
   function(survts, hmm, time_point_to_consider,
-           id, time_units_back,
-           past_weeks_not_included_training,
-           past_weeks_not_included_state,
-           past_weeks_not_included_init) {
+           id, time_units_back) {
     
     modelData <- extractModelData(
       survts, hmm@emission@excode_formula,
@@ -295,23 +288,6 @@ setMethod("prepareData",
     modelData$id <- id
     modelData <- addDistrData(hmm@emission@distribution, modelData)
 
-    modelData$init <- TRUE
-    if (past_weeks_not_included_init > 0) {
-      start_ind <- nrow(modelData) - past_weeks_not_included_init - 1
-      modelData$init[start_ind:nrow(modelData)] <- FALSE
-    }
-
-    modelData$training <- TRUE
-    if (past_weeks_not_included_training > 0) {
-      start_ind <- nrow(modelData) - past_weeks_not_included_training
-      modelData$training[start_ind:nrow(modelData)] <- FALSE
-    }
-
-    modelData$state_training <- TRUE
-    if (past_weeks_not_included_state > 0) {
-      start_ind <- nrow(modelData) - past_weeks_not_included_state - 1
-      modelData$state_training[start_ind:nrow(modelData)] <- FALSE
-    }
 
     modelData$curr_week <- FALSE
     modelData$curr_week[nrow(modelData)] <- TRUE

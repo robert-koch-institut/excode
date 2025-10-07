@@ -38,7 +38,6 @@
 #' @param return_full_model \code{logical}. If \code{FALSE} (default), return only results
 #' for the specified \code{timepoints}. If \code{TRUE}, return the complete time series used
 #' for fitting.
-#' @param past_timepoints_not_included \code{integer}. Number of most recent past time points
 #' to exclude from initialization. Defaults to \code{26}. For daily data this excludes the past
 #' \emph{x} days; for weekly data, the past \emph{x} weeks.
 #' @param time_units_back \code{integer}. How many past time \emph{units} to include when fitting.
@@ -66,82 +65,67 @@
 #'
 #' @rdname run_excode
 #' @export
-run_excode <- function(excode_model, surv_ts=NULL, timepoints=NULL,  maxIter = 100,
-                                verbose = FALSE, return_full_model = FALSE,
-                                past_timepoints_not_included  = 26, time_units_back = 5) {
+run_excode <- function(surv_ts, timepoints=NULL,
+                       time_units_back = 5, distribution, 
+                       states, time_trend="None", 
+                       periodic_model="Harmonic", 
+                       period_length=52, 
+                       intercept=TRUE,
+                       covariate_df=NULL,
+                       weights_threshold = 2.58,
+                       weights_threshold_baseline = 1, 
+                       maxIter = 100,
+                       verbose = FALSE, 
+                       return_full_model = FALSE) {
   
   
-  v <- validate_run_excode_inputs(excode_model, surv_ts, timepoints,
-                                   maxIter, verbose, return_full_model,
-                                   past_timepoints_not_included, time_units_back)
-  surv_ts  <- v$surv_ts
-  timepoints <- v$timepoints
-  maxIter  <- v$maxIter
-  verbose  <- v$verbose
-  return_full_model <- v$return_full_model
-  past_timepoints_not_included <- v$past_timepoints_not_included
-  time_units_back <- v$time_units_back
-  
-  # (keep your existing MultiState override; the warnings above explain precedence)
-  if (any(is(excode_model@emission@excode_formula) == "MultiState")) {
-    if (nrow(excode_model@emission@excode_formula@surv_ts) > 0) {
-      surv_ts <- excode_model@emission@excode_formula@surv_ts
-      timepoints <- nrow(surv_ts)
-      # Re-run minimal checks after override
-      v2 <- validate_run_excode_inputs(excode_model, surv_ts=NULL, timepoints,
-                                        maxIter, verbose, return_full_model,
-                                        past_timepoints_not_included, time_units_back)
-      #surv_ts <- v2$surv_ts
-      timepoints <- v2$timepoints
-    }
+  if(is.null(timepoints)) {
+    stop("Specify timepoints for model fitting.")
+  } else if(length(timepoints)>1 & return_full_model) {
+    stop("`return_full_model==TRUE` not allowed with `length(timepoints)>0`.")
   }
+  surv_ts$id <- "ts1"
+  surv_ts_init <- surv_ts
+  no_states <- states 
   
-  # If still no surv_ts, that's an error
-  if (is.null(surv_ts)) {
-    stop("No `surv_ts` provided and none embedded in a MultiState formula.")
-  }
-  
-  if(any(is(excode_model@emission@excode_formula) == "MultiState")) {
-    if(nrow(excode_model@emission@excode_formula@surv_ts)>0) {
-      surv_ts <- excode_model@emission@excode_formula@surv_ts
-      timepoints <- nrow(surv_ts)
-    }
-  }
-  if (!any(names(surv_ts) == "state")) {
-    surv_ts$state <- NA
-  }
-  if (!any(names(surv_ts) == "offset")) {
-    surv_ts$offset <- matrix(rep(1, nrow(surv_ts)), ncol = 1)
-  }
-  
-  excode_model_init <- excode_model
-
-  transMat_init <- excode_model@transitions
-  initProb_init <- excode_model@initial_prob
-
   all_errors <- rep("", length(timepoints))
   names(all_errors) <- timepoints
 
   result_models <- list()
   result <- list()
   for (k in timepoints) {
-    excode_model <- excode_model_init
-
+    excode_model <- init_excode(surv_ts_init, k, time_units_back, distribution, 
+                                no_states, time_trend=time_trend, periodic_model, 
+                               period_length=period_length, 
+                               intercept=intercept,
+                               covariate_df=covariate_df,
+                               weights_threshold = weights_threshold,
+                               weights_threshold_baseline = weights_threshold_baseline) 
+    
+    v <- validate_run_excode_inputs(excode_model, nrow(excode_model@emission@excode_formula@surv_ts),
+                                    maxIter, verbose, 
+                                    return_full_model, time_units_back)
+    surv_ts  <- v$surv_ts
+    timepoints <- v$timepoints
+    maxIter  <- v$maxIter
+    verbose  <- v$verbose
+    return_full_model <- v$return_full_model
+    time_units_back <- v$time_units_back
+    
+    transMat_init <- excode_model@transitions
+    initProb_init <- excode_model@initial_prob
+    
+   
     if (verbose) {
       cat("Fitting model at position ", k, "\n", sep = "")
     }
-
-    excode_model@transitions <- transMat_init
-    excode_model@initial_prob <- initProb_init
 
     excode_model_fit <- NULL
     modelData <- NULL
     curr_error <- tryCatch(
       {
-        modelData <- prepareData(surv_ts, excode_model, k,
-          id = "ts1", time_units_back = time_units_back,
-          past_weeks_not_included_state = past_timepoints_not_included,
-          past_weeks_not_included_init = past_timepoints_not_included
+        modelData <- prepareData(surv_ts, excode_model, nrow(surv_ts),
+          id = "ts1", time_units_back = time_units_back
         )
 
           excode_model_fit <- fitUnsupervised(excode_model, modelData, transMat_init,
@@ -159,7 +143,7 @@ run_excode <- function(excode_model, surv_ts=NULL, timepoints=NULL,  maxIter = 1
     if (!is.na(curr_error)) {
       ts_len <- 1
       if (is.null(excode_model_fit)) {
-        excode_model_fit <- list(hmm = excode_model_init)
+        excode_model_fit <- list(hmm = excode_model)
       }
       ts_len <- nrow(excode_model_fit$hmm@emission@excode_formula@surv_ts)
       
@@ -204,7 +188,7 @@ run_excode <- function(excode_model, surv_ts=NULL, timepoints=NULL,  maxIter = 1
       index_0 <- which(excode_model_fit$model$state == 0)
       index_1 <- which(excode_model_fit$model$state == 1)
       excode_model_fit$hmm@timepoint_fit <- rep(k, length(index_0))
-      ts_len <- which(excode_model_fit$model$rtime == k &
+      ts_len <- which(excode_model_fit$model$rtime == nrow(surv_ts) &
         excode_model_fit$model$state == 0)
       excode_model_fit$hmm@posterior <- excode_model_fit$hmm_expectation$gamma
 
@@ -248,7 +232,7 @@ run_excode <- function(excode_model, surv_ts=NULL, timepoints=NULL,  maxIter = 1
         length(index_0)
       )
 
-      excode_model_fit$hmm@timepoint <- excode_model_fit$model$rtime[index_0]
+      excode_model_fit$hmm@timepoint <- (k-length(index_0)+1):k # excode_model_fit$model$rtime[index_0]
       excode_model_fit$hmm@date <- excode_model_fit$model$date[index_0]
       excode_model_fit$hmm@observed <- excode_model_fit$model$response[index_0]
       excode_model_fit$hmm@emission@mu0 <- excode_model_fit$model$mu[index_0]
@@ -290,9 +274,8 @@ run_excode <- function(excode_model, surv_ts=NULL, timepoints=NULL,  maxIter = 1
 
     if (!return_full_model) {
       nStates <- excode_model_fit$hmm@nStates
-      ts_len <- which(excode_model_fit$hmm@timepoint == k &
+      ts_len <- which(excode_model_fit$hmm@timepoint == nrow(surv_ts) &
         excode_model_fit$hmm@timepoint_fit == k)
-
       excode_model_fit$hmm@timepoint_fit <- excode_model_fit$hmm@timepoint_fit[ts_len]
       excode_model_fit$hmm@posterior <- matrix(excode_model_fit$hmm@posterior[ts_len, ], ncol = nStates)
       colnames(excode_model_fit$hmm@posterior) <- paste0("posterior", 0:(nStates - 1))
@@ -300,7 +283,7 @@ run_excode <- function(excode_model, surv_ts=NULL, timepoints=NULL,  maxIter = 1
       #  matrix(excode_model_fit$hmm@alpha[(ts_len-1):ts_len,], ncol=2)
       excode_model_fit$hmm@id <- excode_model_fit$hmm@id[ts_len]
 
-      excode_model_fit$hmm@timepoint <- excode_model_fit$hmm@timepoint[ts_len]
+      excode_model_fit$hmm@timepoint <- k#excode_model_fit$hmm@timepoint[ts_len]
       excode_model_fit$hmm@date <- excode_model_fit$hmm@date[ts_len]
 
       excode_model_fit$hmm@observed <- excode_model_fit$hmm@observed[ts_len]
@@ -441,13 +424,14 @@ merge_results <- function(excode_model_fit_list) {
 
 
 validate_run_excode_inputs <- function(excode_model,
-                                       surv_ts,
                                        timepoints,
                                        maxIter,
                                        verbose,
                                        return_full_model,
-                                       past_timepoints_not_included,
                                        time_units_back) {
+  
+  surv_ts <- excode_model@emission@excode_formula@surv_ts
+  
   # 1) excode_model -----------------------------------------------------------
   if (!methods::is(excode_model, "excodeModel")) {
     stop("`excode_model` must be an S4 object of class 'excodeModel'.")
@@ -510,36 +494,15 @@ validate_run_excode_inputs <- function(excode_model,
   }
   
   maxIter                      <- chk_scalar_int(maxIter, "maxIter", min_val = 1)
-  past_timepoints_not_included <- chk_scalar_int(past_timepoints_not_included,
-                                                 "past_timepoints_not_included",
-                                                 min_val = 0)
   time_units_back              <- chk_scalar_int(time_units_back, "time_units_back",
                                                  min_val = 1)
   chk_scalar_logical(verbose, "verbose")
   chk_scalar_logical(return_full_model, "return_full_model")
   
-  # 5) embedded surv_ts via MultiState excodeFormula --------------------------
-  has_multistate <- FALSE
-  try({
-    has_multistate <- any(methods::is(excode_model@emission@excode_formula, "MultiState"))
-  }, silent = TRUE)
-  
-  if (has_multistate) {
-    embedded_df <- NULL
-    try({
-      embedded_df <- excode_model@emission@excode_formula@surv_ts
-    }, silent = TRUE)
-    if (!is.null(embedded_df) && NROW(embedded_df) > 0) {
-      if (!is.null(surv_ts)) {
-        warning("Both `surv_ts` and a MultiState-embedded `surv_ts` were provided; ",
-                "the embedded data will take precedence.")
-      }
-    }
-  }
-  
+
   # 6) surv_ts column checks & normalization ----------------------------------
   normalize_surv_ts <- function(df) {
-    req_cols <- c("date", "observed", "id")
+    req_cols <- c("date", "observed")
     miss <- setdiff(req_cols, names(df))
     if (length(miss)) {
       stop("`surv_ts` is missing required column(s): ", paste(miss, collapse = ", "))
@@ -569,11 +532,6 @@ validate_run_excode_inputs <- function(excode_model,
       df$observed <- as.integer(round(df$observed))
     }
     
-    # id
-    if (!(is.character(df$id) || is.factor(df$id))) {
-      stop("`surv_ts$id` must be character or factor.")
-    }
-    df$id <- as.character(df$id)
     
     # offset
     if (!("offset" %in% names(df))) {
@@ -604,9 +562,9 @@ validate_run_excode_inputs <- function(excode_model,
     # -------------------------------------------------------------------------
     
     # duplicates & order
-    if (anyDuplicated(df[c("id","date")])) {
-      dup <- df[duplicated(df[c("id","date")]) | duplicated(df[c("id","date")], fromLast = TRUE),
-                c("id","date")]
+    if (anyDuplicated(df[c("date")])) {
+      dup <- df[duplicated(df[c("date")]) | duplicated(df[c("date")], fromLast = TRUE),
+                c("date")]
       stop("`surv_ts` has duplicate (id, date) rows. Example: ",
            paste(utils::head(paste(dup$id, dup$date), 3), collapse = "; "), " …")
     }
@@ -617,7 +575,7 @@ validate_run_excode_inputs <- function(excode_model,
     }
     
     # extra columns
-    extra <- setdiff(names(df), c("date","observed","id","offset","state"))
+    extra <- setdiff(names(df), c("date","observed","offset","state"))
     if (length(extra)) {
       message("Additional columns in `surv_ts` will be passed through/ignored as appropriate: ",
               paste(extra, collapse = ", "))
@@ -664,7 +622,6 @@ validate_run_excode_inputs <- function(excode_model,
     maxIter = maxIter,
     verbose = verbose,
     return_full_model = return_full_model,
-    past_timepoints_not_included = past_timepoints_not_included,
     time_units_back = time_units_back
   )
 }

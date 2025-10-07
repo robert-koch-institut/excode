@@ -109,7 +109,7 @@ getGammaXsi <- function(hmm, modelData, emissionProb) {
     }
   }
   colnames(gamma) <- paste0("posterior", 0:(ncol(gamma) - 1))
-  return(list(LogLik = -sum(log(resc)), gamma = gamma, xsi = xsi))
+  return(list(LogLik = -sum(log(resc)), gamma = gamma, xsi = xsi, alpha = alpha, beta = beta))
 }
 
 

@@ -130,13 +130,19 @@ excodeModel <- function(family, formula,
       initProb <- c(0.5, 0.5)
     }
   } else {
-    initProb <- rep(1 / nStates, length = nStates)
-    transMat <- matrix(rep(initProb, length = nStates),
-      ncol = nStates,
-      nrow = nStates
-    )
+    
+    if (is.null(transMat)) {
+      transMat <- matrix(rep(initProb, length = nStates),
+                         ncol = nStates,
+                         nrow = nStates
+      )
+    }
+    if (is.null(initProb)) {
+      initProb <- rep(1 / nStates, length = nStates)
+      
+    }
     setBckgState <- FALSE
-    transMat_prior <- FALSE
+    transMat_prior <- TRUE
   }
 
 
@@ -154,19 +160,17 @@ excodeModel <- function(family, formula,
 }
 
 updateTransInitProb <- function(excode_model, gamma, xsi, modelData) {
-  log_dir1 <- 0
-  log_dir2 <- 0
-
+  
   transMat <- Reduce("+", xsi)
   gammaSum_ind <- which(modelData$timepoint != max(modelData$timepoint) & modelData$state == 0)
   # print(gammaSum_ind)
   gammaSum <- apply(gamma[gammaSum_ind, ], 2, sum)
   if (excode_model@transitions_prior) { # Update with prior weights
+    log_dir <- 0
     for (i in 1:nrow(transMat)) {
-      transMat[i, ] <- (excode_model@prior_weights[i, ] - 1 + transMat[i, ]) / (sum(excode_model@prior_weights[i, ]) - 2 + gammaSum[i])
+      transMat[i, ] <- (excode_model@prior_weights[i, ] - 1 + transMat[i, ]) / (sum(excode_model@prior_weights[i, ]) - ncol(transMat) + gammaSum[i])
+      log_dir <- log_dir + log_dirichlet(transMat[i, ], excode_model@prior_weights[i, ])
     }
-    log_dir1 <- log_dirichlet(transMat[1, ], excode_model@prior_weights[1, ])
-    log_dir2 <- log_dirichlet(transMat[2, ], excode_model@prior_weights[2, ])
   } else { # Update without prior
     for (i in 1:nrow(transMat)) {
       transMat[i, ] <- transMat[i, ] / gammaSum[i]
@@ -182,7 +186,7 @@ updateTransInitProb <- function(excode_model, gamma, xsi, modelData) {
 
   excode_model@transitions <- transMat
   excode_model@initial_prob <- as.vector(initProb)
-  excode_model@loglik_transitions <- log_dir1 + log_dir2
+  excode_model@loglik_transitions <- log_dir
 
   excode_model
 }
@@ -328,9 +332,9 @@ setMethod("summary",
 
     if (object@nStates == 2) {
       pars_order <- c(pars_order, "posterior_ub", "pval_ub", "anscombe_ub")
-      pars_order <- pars_order[pars_order != "posterior0"]
-      pars_order[which(pars_order == "posterior1")] <- "posterior"
-      names(res_df)[names(res_df) == "posterior1"] <- "posterior"
+      #pars_order <- pars_order[pars_order != "posterior0"]
+      #pars_order[which(pars_order == "posterior1")] <- "posterior"
+      #names(res_df)[names(res_df) == "posterior1"] <- "posterior"
     }
 
     res_df[pars_order]

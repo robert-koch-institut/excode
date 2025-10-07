@@ -1,96 +1,4 @@
 
-initGLM <- function(hmm,
-                    modelData,
-                    weightsThreshold = 2.58,
-                    weightsThresholdBckg = 1,
-                    setBckgState = TRUE,
-                    limitCaseWeeks = c(-Inf, 1)) {
-  rownames(modelData) <- NULL
-  suppressWarnings(curr_model <- glm(hmm@emission@excode_formula@formula_bckg,
-    data = modelData[modelData$init, ],
-    family = quasipoisson(link = "log")
-  ))
-
-  phi <- max(summary(curr_model)$dispersion, 1)
-  K <- min(c(10, phi + 1))
-
-  curr_anscombe_res_temp <- surveillance::anscombe.residuals(curr_model, max(summary(curr_model)$dispersion, 1))
-  curr_anscombe_res <- rep(Inf, nrow(modelData))
-  curr_anscombe_res[which(modelData$init)] <- curr_anscombe_res_temp # & bckg_state
-  # Use anscombe residuals to set bckg states
-  modelData$bckg_state <- modelData$true_state
-  
-  if (setBckgState) {
-    #modelData$bckg_state <- NA
-    selInd <- which(!modelData$curr_week)
-    setZero <- which((curr_anscombe_res[selInd] < weightsThresholdBckg | 
-                       modelData$response[selInd] == 0) & is.na(modelData$true_state[selInd]))
-    modelData$bckg_state[setZero] <- 0
-  }
-  # Set states which should not be used for training to NA
-  modelData$true_state[!modelData$state_training] <- NA
-  modelData$bckg_state[!modelData$state_training] <- NA
-
-  modelData$known_state <- modelData$bckg_state
-  #print(modelData$bckg_state)
-  
-  dataGLM1 <- modelData
-  dataGLM2 <- modelData
-  dataGLM1$state <- 0
-  dataGLM2$state <- 1
-  dataGLM_expanded <- rbind(dataGLM1, dataGLM2)
-
-  expected_mu_bckg <- predict(curr_model, newdata = modelData, type = "response")
-  expected_mu <- c(expected_mu_bckg, expected_mu_bckg * K)
-  start_pi <- sum(as.numeric(dataGLM_expanded$response == 0)) / (nrow(dataGLM_expanded))
-  emission_params <- data.frame(
-    mu = expected_mu, nb_size = expected_mu / (phi - 1),
-    pi = start_pi
-  )
-  take_cols <- names(dataGLM_expanded)
-
-  # Call generic function for Negative Binomial for initialization
-  emissionProb <- calcEmissionProb(new("NegBinom"), cbind(dataGLM_expanded, emission_params))
-
-  if (all(emissionProb[, 2] == 0)) {
-    K <- max(c(1.2, max(modelData$response / expected_mu_bckg)))
-    expected_mu_bckg <- predict(curr_model, newdata = modelData, type = "response")
-    expected_mu <- c(expected_mu_bckg, expected_mu_bckg * K)
-    start_pi <- sum(as.numeric(dataGLM_expanded$response == 0)) / (nrow(dataGLM_expanded))
-    emission_params <- data.frame(
-      mu = expected_mu, nb_size = expected_mu / (phi - 1),
-      pi = start_pi
-    )
-    take_cols <- names(dataGLM_expanded)
-    emissionProb <- calcEmissionProb(new("NegBinom"), cbind(dataGLM_expanded, emission_params))
-  }
-
-  dataGLM_expanded <- cbind(dataGLM_expanded, emission_params)
-
-  dataGLM_expanded <- dataGLM_expanded[, c(take_cols, getParamNames(hmm@emission@distribution))]
-
-  both_zero <- which(apply(emissionProb, 1, sum) < .Machine$double.eps)
-  if (length(both_zero) > 0) {
-    for (k in both_zero) {
-      assign_state <- ifelse(modelData$response[k] > expected_mu[k], 1, 0)
-      emissionProb[k, ] <- c(1 - assign_state, assign_state)
-    }
-  }
-
-
-  # gamma_xsi = getGammaXsi(hmm, dataGLM_expanded, emissionProb)
-  gamma_xsi <- forwardBackward(
-    hmm, dataGLM_expanded,
-    emissionProb
-  )
-
-  # write.table(gamma_xsi$gamma, file="posterior_excode.csv", sep=";", quote=FALSE, row.names=FALSE)
-
-  omega <- as.vector(gamma_xsi$gamma)
-  model_updated <- updateEmission(hmm@emission, dataGLM_expanded, omega)
-  model_updated
-}
-
 init_glm_mutlistate <- function(hmm,
                                 modelData,
                                 setBckgState = TRUE) {
@@ -361,13 +269,13 @@ init_excode <- function(surv_ts, timepoint, time_units_back, distribution,
   }
   
   # weights_threshold
-  if (!is.numeric(weights_threshold) || weights_threshold <= 0) {
-    stop("'weights_threshold' must be a positive number.")
+  if (!is.numeric(weights_threshold) || weights_threshold < 0) {
+    stop("'weights_threshold' must be >= 0.")
   }
   
   # weights_threshold_baseline
-  if (!is.numeric(weights_threshold_baseline) || weights_threshold_baseline <= 0) {
-    stop("'weights_threshold_baseline' must be a positive number.")
+  if (!is.numeric(weights_threshold_baseline) || weights_threshold_baseline < 0) {
+    stop("'weights_threshold_baseline' must be >= 0.")
   }
   
   
@@ -442,10 +350,14 @@ init_excode <- function(surv_ts, timepoint, time_units_back, distribution,
   }
   
   model_data_init$state <- factor(initial_states)
+  transMat <- table(model_data_init$state[1:(nrow(model_data_init)-1)],
+                    model_data_init$state[2:(nrow(model_data_init))])+max(c(1,nrow(model_data_init)*0.1))
+  transMat <- t(apply(transMat,1,function(x) x/sum(x)))
   suppressWarnings(init_model <- glm(paste0(formula_baseline, " + state"),
                                      data = model_data_init,
                                      family = quasipoisson(link = "log")
   ))
+  phi <- max(summary(init_model)$dispersion, 1)
   
   initial_mu <- matrix(NA, nrow=nrow(model_data_init),
                        ncol=states)
@@ -467,8 +379,9 @@ init_excode <- function(surv_ts, timepoint, time_units_back, distribution,
       
     } 
     initial_mu[,1] <- Pnb
-    initial_mu[,2] <- get_upper(Pnb, stdp, od, 3)
-    initial_mu[,3] <- get_upper(Pnb, stdp, od, 6)
+    initial_mu[,2] <- get_upper(Pnb, stdp, od, 1)
+    initial_mu[,3] <- get_upper(Pnb, stdp, od, 2)
+    initial_mu[,4] <- get_upper(Pnb, stdp, od, 3)
   }
   #plot(model_data_init$response)
   #lines(initial_mu[,1], col="lightgreen", lwd=2)
@@ -479,24 +392,9 @@ init_excode <- function(surv_ts, timepoint, time_units_back, distribution,
   excode_family <- excodeFamily(distribution, nb_size = theta)
   excode_multistate <- excodeModel(excode_family,
                                    excode_formula_multistate,
-                                   initial_mu = initial_mu)
+                                   initial_mu = initial_mu,
+                                   transMat = transMat)
   
-  if(FALSE) {
-    if (setBckgState) {
-      #modelData$bckg_state <- NA
-      selInd <- which(!modelData$curr_week)
-      setZero <- which((curr_anscombe_res[selInd] < weightsThresholdBckg | 
-                          modelData$response[selInd] == 0) & is.na(modelData$true_state[selInd]))
-      modelData$bckg_state[setZero] <- 0
-    }
-    # Set states which should not be used for training to NA
-    modelData$true_state[!modelData$state_training] <- NA
-    modelData$bckg_state[!modelData$state_training] <- NA
-    
-    modelData$known_state <- modelData$bckg_state
-    #print(modelData$bckg_state)
-    
-  }
   excode_multistate
 }
 
