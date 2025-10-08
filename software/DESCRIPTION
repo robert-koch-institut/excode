@@ -17,12 +17,16 @@ License: GPL-3
 Depends: 
     R (>= 4.3.0)
 Imports: 
+    dplyr,
     graphics,
+    ggplot2,
     MASS,
     methods,
+    patchwork,
     splines,
     stats,
-    surveillance
+    surveillance,
+    tidyr
 Suggests: 
     dplyr,
     ggplot2,

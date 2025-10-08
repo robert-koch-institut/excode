@@ -274,8 +274,7 @@ run_excode <- function(surv_ts, timepoints=NULL,
 
     if (!return_full_model) {
       nStates <- excode_model_fit$hmm@nStates
-      ts_len <- which(excode_model_fit$hmm@timepoint == nrow(surv_ts) &
-        excode_model_fit$hmm@timepoint_fit == k)
+      ts_len <- nrow(surv_ts)
       excode_model_fit$hmm@timepoint_fit <- excode_model_fit$hmm@timepoint_fit[ts_len]
       excode_model_fit$hmm@posterior <- matrix(excode_model_fit$hmm@posterior[ts_len, ], ncol = nStates)
       colnames(excode_model_fit$hmm@posterior) <- paste0("posterior", 0:(nStates - 1))

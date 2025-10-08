@@ -294,37 +294,6 @@ setMethod("summary",
 
     res_df <- res_df[pars_order]
 
-    if (object@nStates == 2) {
-      posterior_bound <- calcPosteriorBound(object, prob_threshold, maxiter)
-      posterior_bound$timepoint <- posterior_bound$timepoint_fit
-
-      res_df <- merge(res_df, posterior_bound,
-        by = c("timepoint_fit", "timepoint"),
-        all.x = TRUE
-      )
-
-      pval_bound <- calcPvalueBound(
-        object@emission@distribution,
-        object, pval_threshold
-      )
-
-      res_df <- merge(res_df, pval_bound,
-        by = c("timepoint_fit", "timepoint"),
-        all.x = TRUE
-      )
-      
-      anscombe_bound <- calcAnscombeBound(
-        object@emission@distribution,
-        object, anscombe_threshold
-      )
-      
-      res_df <- merge(res_df, anscombe_bound,
-                      by = c("timepoint_fit", "timepoint"),
-                      all.x = TRUE
-      )
-      res_df <- res_df[order(res_df$timepoint),]
-
-    }
 
     if (remove_timpoint_fit) {
       pars_order <- pars_order[pars_order != "timepoint_fit"]

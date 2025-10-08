@@ -132,8 +132,33 @@ setMethod("anscombe_residuals",
 setMethod("anscombe_residuals",
           signature = c("EmissionGLMNegBinom", "data.frame"),
           function(emission, model_data) {
-            rA <- as.numeric(rep(NA, length(which(model_data$state==0))))
-            rA
+            rA <- NULL
+            
+            glm_data <- model.frame(emission@glm)#model_data#
+            glm_formula <- emission@excode_formula@formula
+            col_pop <- which(names(glm_data)=="offset(log(population))")
+            names(glm_data)[col_pop] <- "population"
+            col_w <- which(names(glm_data)=="(weights)")
+            names(glm_data)[col_w] <- "weights"
+            
+            glm_data$population <- exp(glm_data$population)
+            glm_weights <- glm_data$weights
+            glm_data <- glm_data[,-col_w]
+            
+            non_zero_w <- which(glm_weights>0)
+            glm_qpois <- glm(as.formula(glm_formula), 
+                             data=glm_data[non_zero_w,], 
+                             weights=glm_weights[non_zero_w],
+                             family=quasipoisson())
+            
+            mu <- predict(glm_qpois, newdata=model_data,
+                          type="response")[model_data$state==0]
+            observed <- model_data$response[model_data$state==0]
+            phi <- max(c(1, summary(glm_qpois)$dispersion))
+            numer <- 3 * (observed^(2/3) - mu^(2/3))
+            denom <- 2 * sqrt(phi * mu^(1/3))
+            rA <- numer / denom
+            as.vector(rA)
           }
 )
 

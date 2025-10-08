@@ -178,46 +178,6 @@ setMethod("summary_family",
 
 
 
-#' @title Creates a data.frame containing data needed to calculate alarm threshold based on posterior probability.
-#'
-#' @param excode_family An excodeFamily object.
-#' @returns A data.frame containing data needed to calculate alarm threshold based on posterior probability.
-#'
-#' @seealso \code{\linkS4class{NegBinom}}, \code{\linkS4class{Poisson}}
-#'
-#' @keywords internal
-#' @noRd
-setGeneric("create_emission_prob_input", function(excode_family, ...) standardGeneric("create_emission_prob_input"))
-
-setMethod("create_emission_prob_input",
-  signature = c("NegBinom"),
-  function(excode_family, y, mu0, mu1, index) {
-    nb_size <- as.numeric(excode_family@nb_size)[index]
-    data.frame(
-      response = y, mu = c(mu0, mu1),
-      state = c(
-        rep(0, length(mu0)),
-        rep(1, length(mu1))
-      ),
-      nb_size = nb_size
-    )
-  }
-)
-
-setMethod("create_emission_prob_input",
-  signature = c("Poisson"),
-  function(excode_family, y, mu0, mu1, index) {
-    data.frame(
-      response = y, mu = c(mu0, mu1),
-      state = c(
-        rep(0, length(mu0)),
-        rep(1, length(mu1))
-      )
-    )
-  }
-)
-
-
 
 
 

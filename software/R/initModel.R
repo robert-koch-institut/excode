@@ -245,7 +245,7 @@ init_excode <- function(surv_ts, timepoint, time_units_back, distribution,
   }
   
   # time_trend
-  valid_trends <- c("Linear", "Spline1", "Spline2", "None")
+  valid_trends <- c("Linear", "Spline1", "Spline2", "Spline3", "Spline4", "None")
   if (!time_trend %in% valid_trends) {
     stop(sprintf("'time_trend' must be one of: %s.", 
                  paste(valid_trends, collapse = ", ")))
