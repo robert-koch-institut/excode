@@ -2,145 +2,97 @@
 % Please edit documentation in R/run_excode.R
 \name{run_excode}
 \alias{run_excode}
-\alias{run_excode,sts,excodeModel-method}
-\alias{run_excode,list,excodeModel-method}
-\alias{run_excode,data.frame,excodeModel-method}
 \title{Detect Excess Counts in Epidemiological Time Series}
 \usage{
 run_excode(
   surv_ts,
-  excode_model,
-  timepoints,
-  learning_type = "unsupervised",
+  timepoints = NULL,
+  time_units_back = 5,
+  distribution,
+  states,
+  time_trend = "None",
+  periodic_model = "Harmonic",
+  period_length = 52,
+  intercept = TRUE,
+  covariate_df = NULL,
+  weights_threshold = 2.58,
+  weights_threshold_baseline = 1,
+  set_baseline_state = FALSE,
   maxIter = 100,
   verbose = FALSE,
-  return_full_model = FALSE,
-  past_timepoints_not_included = 26,
-  time_units_back = 5
-)
-
-\S4method{run_excode}{sts,excodeModel}(
-  surv_ts,
-  excode_model,
-  timepoints,
-  learning_type = "unsupervised",
-  maxIter = 100,
-  verbose = FALSE,
-  return_full_model = FALSE,
-  past_timepoints_not_included = 26,
-  time_units_back = 5
-)
-
-\S4method{run_excode}{list,excodeModel}(
-  surv_ts,
-  excode_model,
-  timepoints,
-  learning_type = "unsupervised",
-  maxIter = 100,
-  verbose = FALSE,
-  return_full_model = FALSE,
-  past_timepoints_not_included = 26,
-  time_units_back = 5
-)
-
-\S4method{run_excode}{data.frame,excodeModel}(
-  surv_ts,
-  excode_model,
-  timepoints,
-  learning_type = "unsupervised",
-  maxIter = 100,
-  verbose = FALSE,
-  return_full_model = FALSE,
-  past_timepoints_not_included = 26,
-  time_units_back = 5
+  return_full_model = FALSE
 )
 }
 \arguments{
-\item{surv_ts}{A surveillance time series input. This can be one of the following:
-\itemize{
-  \item A \code{data.frame}, which can represent either a single or multiple time series.
-        This data.frame contains the following columns:
-        \itemize{
-          \item \strong{date}: The date of aggregation.
-          \item \strong{observed}: The observed number of cases.
-          \item \strong{id}: The identifier of the time series (even if only one).
-          \item \strong{offset} (optional): For example, the susceptible population.
-          \item \strong{state} (optional): Indicates periods with special events such as outbreaks
-            (e.g., 0 = normal, 1 = excess cases, NA = unknown).
-        }
-  \item A single \code{sts} object containing one timeseries.
-  \item A named list of \code{sts} objects, each representing a separate time series.
-}}
+\item{surv_ts}{A \code{data.frame} as specified under \emph{Details}.}
 
-\item{excode_model}{An object of class \code{\linkS4class{excodeModel}} which specifies the model parameters and structure}
+\item{timepoints}{An \code{integer} or integer vector specifying the time points
+at which excess-count detection should be performed. If \code{NULL} and the model
+embeds a \code{surv_ts} via a \code{MultiState} formula, an appropriate default is chosen.}
 
-\item{timepoints}{An \code{integer} or a sequence of integers specifying
-the time points for which excess count detection should be performed.}
+\item{time_units_back}{\code{integer}. How many past time \emph{units} to include when fitting.
+Default \code{5}. For example, if \code{timepoints_per_unit = 52} (weekly data, units = years)
+in the \code{excodeFormula}, then \code{5} corresponds to the past 5 years; if
+\code{timepoints_per_unit = 7} (daily data, units = weeks), then \code{5} corresponds to the
+past 5 weeks.}
 
-\item{learning_type}{A \code{character} string indicating the type of learning.
-Must be one of \code{c("unsupervised", "semisupervised", "supervised")}.}
+\item{maxIter}{\code{integer}. Maximum number of EM iterations. Defaults to \code{100}.}
 
-\item{maxIter}{An \code{integer} specifying the maximum number of iterations
-for the Expectation-Maximization (EM) algorithm. Defaults to \code{100}.}
+\item{verbose}{\code{logical}. Print progress during execution. Defaults to \code{FALSE}.}
 
-\item{verbose}{A \code{logical} indicating whether progress should be printed
-during execution. Defaults to \code{FALSE}.}
+\item{return_full_model}{\code{logical}. If \code{FALSE} (default), return only results
+for the specified \code{timepoints}. If \code{TRUE}, return the complete time series used
+for fitting.
+to exclude from initialization. Defaults to \code{26}. For daily data this excludes the past
+\emph{x} days; for weekly data, the past \emph{x} weeks.}
 
-\item{return_full_model}{A \code{logical} indicating whether to return the full
-model output. If \code{FALSE} (default), only results for the specified
-\code{timepoints} are returned. If \code{TRUE}, the complete time series used
-for model fitting is returned.}
-
-\item{past_timepoints_not_included}{An \code{integer} specifying the number of past
-time points to exclude from initialization. Defaults to \code{26}. If your data is daily then the past x days are excluded, for weekly data the past x weeks are excluded.}
-
-\item{time_units_back}{An \code{integer} specifying how many past time units to include when fitting the model.
-The default is \code{5}. For example, if \code{timepoints_per_unit = 52} (weekly data) was specified in excodeFormula,
-then this corresponds to using the past 5 years of data. If \code{timepoints_per_unit = 7} (daily data and the units are weeks) was specified in excodeFormula then time_units_back equal to \code{5} corresponds to the past 5 weeks.}
+\item{excode_model}{An object of class \code{\linkS4class{excodeModel}}
+specifying the model family and formula as well as initial parameters/structure.}
 }
 \value{
-Returns a fitted \code{\linkS4class{excodeModel}} object.
+A fitted \code{\linkS4class{excodeModel}} object containing, for the requested
+time points (or the full series if \code{return_full_model = TRUE}), posterior state
+probabilities, fitted means, p-values, Anscombe residuals, convergence information, and
+information criteria.
 }
 \description{
-This function fits an `excodeModel` to epidemiological surveillance data
-and returns the estimated parameters of an `excodeFamily`. It can handle
-single or multiple time series.
+Fit an \code{\linkS4class{excodeModel}} to epidemiological surveillance data
+and return a fitted model (with posterior probabilities, fitted means, and
+related diagnostics) for detecting excess counts. Supports single or multiple
+time series provided as a \code{data.frame} only.
 }
 \details{
-This function currently accepts a single `sts` object, a `data.frame`, or a **named list of `sts` objects**.
-However, a **an `sts` object matrix** such as the `measlesDE` dataset from the surveillance package is currently not supported and will result in an error.
+The function currently accepts a single \code{data.frame} as the surveillance
+time series input. The \code{data.frame} must contain:
+\itemize{
+  \item \strong{date}: aggregation date;
+  \item \strong{observed}: observed case counts;
+  \item \strong{id}: identifier of the time series (use a single id for one series);
+  \item \strong{offset} (optional): e.g., population at risk;
+  \item \strong{state} (optional): periods with special events (e.g., 0 = normal,
+        1 = excess, \code{NA} = unknown).
+}
+
+It is no longer possible to pass \code{sts} objects (from the
+\pkg{surveillance} package) or lists of such objects. These will result in an
+error. A matrix-like collection of \code{sts} objects (e.g.,
+\code{surveillance::measlesDE}) is also not supported.
+
+If the model's emission uses a \code{MultiState} \code{excodeFormula} that
+already contains a \code{surv_ts} slot, \code{run_excode()} will use that data
+and (if not supplied) set \code{timepoints} accordingly.
 }
 \examples{
-
-# Creating a Poisson harmonic model for the examples
+# Create a Poisson harmonic model
 excode_family_pois <- excodeFamily("Poisson")
 excode_formula_har <- excodeFormula("Harmonic")
-excode_har_pois <- excodeModel(
-  excode_family_pois,
-  excode_formula_har
-)
-# Example 1: Using data.frame as input time series
+excode_har_pois <- excodeModel(excode_family_pois, excode_formula_har)
+
+# Example: data.frame as input
 data(shadar_df)
-result_shadar_har <- run_excode(shadar_df, excode_har_pois, 209:295)
-
-
-# Example 2: Using an sts object (from 'surveillance' package) as input time series
-library(surveillance)
-data(stsNewport)
-result_newport_har <- run_excode(stsNewport, excode_har_pois, 209:295)
-
-# Example 3: Using a named list of two sts objects as input
-stsShadar <- surveillance::sts(shadar_df$observed,
-  epoch = shadar_df$date,
-  state = shadar_df$state
-)
-named_list <- c("salmNewport" = stsNewport, "shadar" = stsShadar)
-result_list <- run_excode(
-  named_list,
-  excode_har_pois, 290
-)
+result_shadar_har <- run_excode(excode_har_pois, shadar_df, 209:295)
 
 }
 \seealso{
-\code{\linkS4class{excodeModel}}
+\code{\linkS4class{excodeModel}}, \code{\linkS4class{excodeFamily}}, \code{\linkS4class{excodeFormula}}
 }

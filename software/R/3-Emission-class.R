@@ -112,9 +112,9 @@ setGeneric("updateEmission", function(emission, dat, omega) standardGeneric("upd
 #'
 #' @keywords internal
 #' @noRd
-setGeneric("anscombe_residuals", function(emission, model_data) standardGeneric("anscombe_residuals"))
+setGeneric("zscores", function(emission, model_data) standardGeneric("zscores"))
 
-setMethod("anscombe_residuals",
+setMethod("zscores",
           signature = c("EmissionGLMPoisson", "data.frame"),
           function(emission, model_data) {
             rA <- NULL
@@ -129,7 +129,7 @@ setMethod("anscombe_residuals",
 )
 
 
-setMethod("anscombe_residuals",
+setMethod("zscores",
           signature = c("EmissionGLMNegBinom", "data.frame"),
           function(emission, model_data) {
             rA <- NULL

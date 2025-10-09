@@ -11,10 +11,10 @@ excodeFormula(
   noPeriods = 10,
   w = 3,
   timeTrend = TRUE,
+  time_trend = "Linear",
   intercept = TRUE,
   data = NULL,
-  df_season = 4,
-  df_trend = 1,
+  surv_ts = data.frame(),
   nStates = NULL,
   shared_params = FALSE,
   offset = FALSE
@@ -35,19 +35,21 @@ or \code{365} for daily data with annual cycles. The default is \code{52}.}
 
 \item{timeTrend}{Logical. Indicates whether a time trend should be included in the model. Used in 'Mean', 'Harmonic' and 'FarringtonNoufaily' models. Default is TRUE.}
 
+\item{time_trend}{Character, that specifies the time trend that should be used. One of c('Linear', 'Spline1', 'Spline2', 'None'). Default is 'Linear'.}
+
 \item{intercept}{Logical. TRUE if the model should include an intercept, FALSE otherwise. Only used with 'MultiState' models.Default is TRUE.}
 
 \item{data}{data.frame. A data.frame containing variables which are used to model case counts. All variables in the data.frame will be used in the model. The data.frame has to have the same number of rows as time points in the time series. Default is NULL.}
-
-\item{df_season}{Integer. Degrees of freedom for spline modeling seasonality. This class uses cubic splines, which are not recommended to model periodic patterns.  Only used for 'Splines' models. Default is 4.}
-
-\item{df_trend}{Integer. Degrees of freedom for spline modeling the time trend. Only used for 'Splines' models. Default is 1.}
 
 \item{nStates}{The number of states of the model. Default is NULL.}
 
 \item{shared_params}{Logical. Indicates whether model parameters are shared across multiple time series. Default is FALSE.}
 
 \item{offset}{Logical. Whether an offset should be included in the model. Default is FALSE.}
+
+\item{df_season}{Integer. Degrees of freedom for spline modeling seasonality. This class uses cubic splines, which are not recommended to model periodic patterns.  Only used for 'Splines' models. Default is 4.}
+
+\item{df_trend}{Integer. Degrees of freedom for spline modeling the time trend. Only used for 'Splines' models. Default is 1.}
 }
 \value{
 An S4 object of class \code{excodeFormula} representing the specified model formula.

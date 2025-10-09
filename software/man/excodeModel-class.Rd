@@ -28,8 +28,6 @@ This class is a generic container for the model used for outbreak detection
 
 \item{\code{id}}{Name of the time series}
 
-\item{\code{method}}{Method for parameter estimation, one of c("supervised", "unsupervised"). Default: "unsupervised".}
-
 \item{\code{converged}}{Logical, indicating whether the EM-algorithm converged.}
 
 \item{\code{niter}}{Maximum number of iterations for model fitting.}

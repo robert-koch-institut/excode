@@ -185,7 +185,8 @@ init_excode <- function(surv_ts, timepoint, time_units_back, distribution,
                         intercept=TRUE,
                         covariate_df=NULL,
                         weights_threshold = 2.58,
-                        weights_threshold_baseline = 1) {
+                        weights_threshold_baseline = 1,
+                        set_baseline_state = FALSE) {
   
   
   # surv_ts
@@ -282,15 +283,17 @@ init_excode <- function(surv_ts, timepoint, time_units_back, distribution,
   excode_family <- excodeFamily(distribution)
   init_time_trend <- ifelse(time_trend!="None", "Linear", "None")
   excode_formula <- excodeFormula(periodic_model, time_trend=init_time_trend, 
-                                  intercept=intercept, data=covariate_df)
+                                  intercept=intercept, data=covariate_df,
+                                  timepoints_per_unit = period_length)
   excode_model <- excodeModel(
     excode_family,
     excode_formula
   )
   
   model_data <- extractModelData(surv_ts, excode_formula, timepoint, time_units_back)
+ # print(c(nrow(model_data), nrow(surv_ts)))
   formula_baseline <- excode_model@emission@excode_formula@formula_bckg
-  
+   
   suppressWarnings(init_model <- glm(formula_baseline,
                                      data = model_data,
                                      family = quasipoisson(link = "log")
@@ -313,28 +316,34 @@ init_excode <- function(surv_ts, timepoint, time_units_back, distribution,
   
   rtimepoints <- which(1:nrow(surv_ts) %in% model_data_init$rtime)
   surv_ts_init <- surv_ts[rtimepoints,]
+ # print(nrow(surv_ts_init))
   #excode_multistate@timepoint <- modelData$rtime
   
   excode_formula <- excodeFormula(periodic_model, time_trend=time_trend, 
-                                  intercept=intercept, data=covariate_df)
+                                  intercept=intercept, data=covariate_df,
+                                  timepoints_per_unit = period_length)
   excode_model <- excodeModel(
     excode_family,
     excode_formula
   )
-  model_data <- extractModelData(surv_ts, excode_formula, timepoint, time_units_back)
+  #model_data <- extractModelData(surv_ts, excode_formula, nrow(surv_ts), time_units_back)
+  model_data <- extractModelData(surv_ts_init, excode_formula, timepoint, time_units_back)
   params <- excode_model@emission@excode_formula@params#[-1]
   if(periodic_model!="Custom") {
     params <- params[-1] 
   }
   params <- params[params!="offset(log(population))"]
-  
+  #print(c(nrow(model_data), nrow(surv_ts_init)))
+  #print(params)
+  #print(names(model_data))
   excode_formula_multistate <- excodeFormula("MultiState",
                                              nStates = states,
                                              intercept = intercept,
                                              time_trend=time_trend,
                                              offset = has_offset,
-                                             data=model_data[,params],
-                                             surv_ts=surv_ts_init
+                                             data=model_data[,params,drop=FALSE],
+                                             surv_ts=surv_ts_init,
+                                             timepoints_per_unit = period_length
   )
   
   no_baseline_t <- which(init_anscombe_res>weights_threshold_baseline)
@@ -351,7 +360,7 @@ init_excode <- function(surv_ts, timepoint, time_units_back, distribution,
   
   model_data_init$state <- factor(initial_states)
   transMat <- table(model_data_init$state[1:(nrow(model_data_init)-1)],
-                    model_data_init$state[2:(nrow(model_data_init))])+max(c(1,nrow(model_data_init)*0.1))
+                    model_data_init$state[2:(nrow(model_data_init))])+max(c(1,nrow(model_data_init)*0.05))
   transMat <- t(apply(transMat,1,function(x) x/sum(x)))
   suppressWarnings(init_model <- glm(paste0(formula_baseline, " + state"),
                                      data = model_data_init,
@@ -367,33 +376,25 @@ init_excode <- function(surv_ts, timepoint, time_units_back, distribution,
     initial_mu[,i] <- predict(init_model, newdata=newdata, type="response")
   }
   
-  if(FALSE) {
-    od <- max(1,sum(init_model_z$weights * init_model_z$residuals^2)/init_model_z$df.r)
-    
-    Pnb<- predict(init_model_z, model_data, type="response")
-    stdp <- predict(init_model_z, model_data, se.fit=TRUE)$se.fit
-    
-    get_upper <- function(Pnb, stdp, od, Z) {
-      
-      (Pnb^(2/3)+ Z*((4/9)*(Pnb^(1/3))*(od+(stdp^2)*(Pnb)))^(1/2))^(3/2)
-      
-    } 
-    initial_mu[,1] <- Pnb
-    initial_mu[,2] <- get_upper(Pnb, stdp, od, 1)
-    initial_mu[,3] <- get_upper(Pnb, stdp, od, 2)
-    initial_mu[,4] <- get_upper(Pnb, stdp, od, 3)
-  }
+  
   #plot(model_data_init$response)
   #lines(initial_mu[,1], col="lightgreen", lwd=2)
   #lines(initial_mu[,2], col="gold", lwd=2)
   #lines(initial_mu[,3], col="tomato", lwd=2)
-  
+  #print(c(nrow(model_data_init),
+  #        nrow(excode_formula_multistate@data),
+  #        nrow(excode_formula_multistate@surv_ts)))
   theta <- median(predict(init_model, type="response")/(phi-1))
   excode_family <- excodeFamily(distribution, nb_size = theta)
   excode_multistate <- excodeModel(excode_family,
                                    excode_formula_multistate,
                                    initial_mu = initial_mu,
                                    transMat = transMat)
+  
+  if(set_baseline_state) {
+    excode_multistate <- compute_baseline_state(excode_multistate,
+                                                weights_threshold_baseline)
+  }
   
   excode_multistate
 }
@@ -522,6 +523,7 @@ compute_baseline_state <- function(excode_multistate,
   # If the MultiState model has nStates, set factor levels accordingly; otherwise leave integer
   n_states <- tryCatch(xf@nStates, error = function(e) NULL)
   surv_ts$state <- as.numeric(state_vec)
+  surv_ts$state[nrow(surv_ts)] <- NA
   
   # Write updated surv_ts back to the model and return it
   excode_multistate@emission@excode_formula@surv_ts <- surv_ts

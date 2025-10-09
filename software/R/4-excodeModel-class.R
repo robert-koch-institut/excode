@@ -45,7 +45,7 @@ setClass("excodeModel",
     posterior = "matrix",
     alpha = "matrix",
     pval = "numeric",
-    anscombe_residual = "numeric",
+    zscore = "numeric",
     timepoint_fit = "numeric",
     timepoint = "numeric",
     date = "Date",
@@ -239,7 +239,7 @@ updateTransInitProb <- function(excode_model, gamma, xsi, modelData) {
 setMethod("summary",
   signature = c("excodeModel"),
   function(object, pars = c(
-             "posterior", "pval", "anscombe_residual", "date", "timepoint",
+             "posterior", "pval", "zscore", "date", "timepoint",
              "observed", "emission", "BIC", "AIC"
            ),
            prob_threshold = 0.5,
@@ -292,6 +292,7 @@ setMethod("summary",
       res_df <- cbind(res_df, posterior_df)
     }
 
+    
     res_df <- res_df[pars_order]
 
 
@@ -299,12 +300,6 @@ setMethod("summary",
       pars_order <- pars_order[pars_order != "timepoint_fit"]
     }
 
-    if (object@nStates == 2) {
-      pars_order <- c(pars_order, "posterior_ub", "pval_ub", "anscombe_ub")
-      #pars_order <- pars_order[pars_order != "posterior0"]
-      #pars_order[which(pars_order == "posterior1")] <- "posterior"
-      #names(res_df)[names(res_df) == "posterior1"] <- "posterior"
-    }
 
     res_df[pars_order]
   }
@@ -327,5 +322,5 @@ setMethod("summary",
 #'
 #' @export
 setMethod(f = "plot", signature = "excodeModel", function(x) {
-  excode::plot_model(x)
+  excode:::plot_model(x)
 })

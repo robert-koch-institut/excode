@@ -74,6 +74,7 @@ run_excode <- function(surv_ts, timepoints=NULL,
                        covariate_df=NULL,
                        weights_threshold = 2.58,
                        weights_threshold_baseline = 1, 
+                       set_baseline_state = FALSE,
                        maxIter = 100,
                        verbose = FALSE, 
                        return_full_model = FALSE) {
@@ -100,7 +101,8 @@ run_excode <- function(surv_ts, timepoints=NULL,
                                intercept=intercept,
                                covariate_df=covariate_df,
                                weights_threshold = weights_threshold,
-                               weights_threshold_baseline = weights_threshold_baseline) 
+                               weights_threshold_baseline = weights_threshold_baseline,
+                               set_baseline_state = set_baseline_state) 
     
     v <- validate_run_excode_inputs(excode_model, nrow(excode_model@emission@excode_formula@surv_ts),
                                     maxIter, verbose, 
@@ -182,7 +184,7 @@ run_excode <- function(surv_ts, timepoints=NULL,
 
 
       excode_model_fit$hmm@pval <- rep(as.numeric(NA), ts_len)
-      excode_model_fit$hmm@anscombe_residual <- rep(as.numeric(NA), ts_len)
+      excode_model_fit$hmm@zscore <- rep(as.numeric(NA), ts_len)
     } else {
       nStates <- length(unique(excode_model_fit$model$state))
       index_0 <- which(excode_model_fit$model$state == 0)
@@ -265,7 +267,7 @@ run_excode <- function(surv_ts, timepoints=NULL,
         excode_model_fit$hmm
       )
       
-      excode_model_fit$hmm@anscombe_residual <- anscombe_residuals(
+      excode_model_fit$hmm@zscore <- zscores(
         excode_model_fit$hmm@emission, 
         excode_model_fit$model
       )
@@ -299,7 +301,7 @@ run_excode <- function(surv_ts, timepoints=NULL,
 
 
       excode_model_fit$hmm@pval <- excode_model_fit$hmm@pval[ts_len]
-      excode_model_fit$hmm@anscombe_residual <- excode_model_fit$hmm@anscombe_residual[ts_len]
+      excode_model_fit$hmm@zscore <- excode_model_fit$hmm@zscore[ts_len]
       excode_model_fit$hmm@error <- excode_model_fit$hmm@error[ts_len]
 
       excode_model_fit$hmm@converged <- excode_model_fit$hmm@converged[ts_len]
@@ -402,9 +404,9 @@ merge_results <- function(excode_model_fit_list) {
         excode_model_fit_list[[i]]@pval
       )
       
-      excode_model_fit@anscombe_residual <- c(
-        excode_model_fit@anscombe_residual,
-        excode_model_fit_list[[i]]@anscombe_residual
+      excode_model_fit@zscore <- c(
+        excode_model_fit@zscore,
+        excode_model_fit_list[[i]]@zscore
       )
       
 
