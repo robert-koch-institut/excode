@@ -15,7 +15,8 @@ Description: Excess count detection ('excode') in epidemiological time series
     models normally expected case counts and expected excess case counts.
 License: GPL-3
 Depends: R (>= 4.3.0)
-Imports: graphics, MASS, methods, splines, stats, surveillance
+Imports: dplyr, graphics, ggplot2, MASS, methods, patchwork, splines,
+        stats, surveillance, tidyr
 Suggests: dplyr, ggplot2, gridExtra, kableExtra, knitr, lubridate,
         rmarkdown
 VignetteBuilder: knitr
@@ -24,5 +25,5 @@ LazyData: true
 NeedsCompilation: no
 RoxygenNote: 7.3.2
 URL: https://robert-koch-institut.github.io/excode/
-Packaged: 2025-07-16 09:27:30 UTC; zacherb
-Built: R 4.4.1; ; 2025-07-16 09:27:45 UTC; windows
+Packaged: 2025-10-10 08:51:47 UTC; zacherb
+Built: R 4.4.1; ; 2025-10-10 08:51:56 UTC; windows

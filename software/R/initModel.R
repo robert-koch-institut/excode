@@ -197,14 +197,13 @@ init_excode <- function(surv_ts, timepoint, time_units_back, distribution,
     stop("'surv_ts' must not be empty.")
   }
   
-  if (!is.numeric(surv_ts$state)) {
-    message("Converting `state` column to `numeric`.")
+  
+  if (!("state" %in% names(surv_ts))) {
     surv_ts$state <- as.numeric(NA)
   }
   
-  if (!("state" %in% names(surv_ts))) {
-    message("No `state` column; creating `state = NA`.")
-    surv_ts$state <- as.numeric(NA)
+  if (!is.numeric(surv_ts$state)) {
+    surv_ts$state <- as.numeric(surv_ts$state)
   }
   # must be numeric, no coercions performed
   if (!is.numeric(surv_ts$state)) {

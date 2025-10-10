@@ -14,6 +14,8 @@ This class is a generic container for a formula which specifies the model used f
 
 \item{\code{shared_params}}{Indicates whether model parameters are shared across multiple time series.}
 
+\item{\code{intercept}}{TRUE if the model should include an intercept, FALSE otherwise.}
+
 \item{\code{coefficients}}{Coefficients of a fitted model.}
 
 \item{\code{failed_optim}}{TRUE if an error occured during model fitting.}

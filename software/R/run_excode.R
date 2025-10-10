@@ -536,7 +536,7 @@ validate_run_excode_inputs <- function(excode_model,
     
     # offset
     if (!("offset" %in% names(df))) {
-      message("No `offset` column; assuming offset = 1 for all rows.")
+      if(verbose) message("No `offset` column; assuming offset = 1 for all rows.") 
       df$offset <- 1
     }
     if (!is.numeric(df$offset) || anyNA(df$offset) || any(df$offset < 1)) {
@@ -545,7 +545,7 @@ validate_run_excode_inputs <- function(excode_model,
     
     # ---- STATE: strict rule: numeric and only 0 or NA -----------------------
     if (!("state" %in% names(df))) {
-      message("No `state` column; creating `state = NA`.")
+      if(verbose) message("No `state` column; creating `state = NA`.")
       df$state <- NA_real_
     }
     # must be numeric, no coercions performed
@@ -576,9 +576,9 @@ validate_run_excode_inputs <- function(excode_model,
     }
     
     # extra columns
-    extra <- setdiff(names(df), c("date","observed","offset","state"))
+    extra <- setdiff(names(df), c("date","observed","offset","state", "id"))
     if (length(extra)) {
-      message("Additional columns in `surv_ts` will be passed through/ignored as appropriate: ",
+      if(verbose) message("Additional columns in `surv_ts` will be passed through/ignored as appropriate: ",
               paste(extra, collapse = ", "))
     }
     
@@ -609,9 +609,9 @@ validate_run_excode_inputs <- function(excode_model,
     if (!is.null(timepoints)) {
       bad <- timepoints <= required_prefix
       if (any(bad)) {
-        warning("Some `timepoints` (", paste(timepoints[bad], collapse = ", "),
-                ") may have insufficient history for fitting (need > ",
-                required_prefix, " observations). Proceeding with available data.")
+        warning("insufficient history for fitting. Available `timepoints`:", paste(timepoints[bad], collapse = ", "),
+                "). `timepoints` needed: ",
+                required_prefix, ". Proceeding with available data.")
       }
     }
   }

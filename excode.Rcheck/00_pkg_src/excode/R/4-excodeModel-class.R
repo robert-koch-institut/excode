@@ -9,7 +9,6 @@
 #' @slot initial_prob Initial state probabilities of the hidden Markov model.
 #' @slot setBckgState Indicates whether a background state should be computed for model fitting. Background states are set to 0s and time points where the Anscombe residuals of the initial model are < 1.
 #' @slot id Name of the time series
-#' @slot method Method for parameter estimation, one of c("supervised", "unsupervised"). Default: "unsupervised".
 #' @slot converged Logical, indicating whether the EM-algorithm converged.
 #' @slot niter Maximum number of iterations for model fitting.
 #' @slot LogLik Log lokelihood of the fitted model.
@@ -38,7 +37,6 @@ setClass("excodeModel",
     initial_prob = "numeric",
     setBckgState = "logical",
     id = "character",
-    method = "character",
     converged = "logical",
     niter = "numeric",
     LogLik = "numeric",
@@ -47,6 +45,7 @@ setClass("excodeModel",
     posterior = "matrix",
     alpha = "matrix",
     pval = "numeric",
+    zscore = "numeric",
     timepoint_fit = "numeric",
     timepoint = "numeric",
     date = "Date",
@@ -131,13 +130,19 @@ excodeModel <- function(family, formula,
       initProb <- c(0.5, 0.5)
     }
   } else {
-    initProb <- rep(1 / nStates, length = nStates)
-    transMat <- matrix(rep(initProb, length = nStates),
-      ncol = nStates,
-      nrow = nStates
-    )
+    
+    if (is.null(transMat)) {
+      transMat <- matrix(rep(initProb, length = nStates),
+                         ncol = nStates,
+                         nrow = nStates
+      )
+    }
+    if (is.null(initProb)) {
+      initProb <- rep(1 / nStates, length = nStates)
+      
+    }
     setBckgState <- FALSE
-    transMat_prior <- FALSE
+    transMat_prior <- TRUE
   }
 
 
@@ -155,26 +160,24 @@ excodeModel <- function(family, formula,
 }
 
 updateTransInitProb <- function(excode_model, gamma, xsi, modelData) {
-  log_dir1 <- 0
-  log_dir2 <- 0
-
+  
   transMat <- Reduce("+", xsi)
-  gammaSum_ind <- which(modelData$wtime != max(modelData$wtime) & modelData$state == 0)
+  gammaSum_ind <- which(modelData$timepoint != max(modelData$timepoint) & modelData$state == 0)
   # print(gammaSum_ind)
   gammaSum <- apply(gamma[gammaSum_ind, ], 2, sum)
   if (excode_model@transitions_prior) { # Update with prior weights
+    log_dir <- 0
     for (i in 1:nrow(transMat)) {
-      transMat[i, ] <- (excode_model@prior_weights[i, ] - 1 + transMat[i, ]) / (sum(excode_model@prior_weights[i, ]) - 2 + gammaSum[i])
+      transMat[i, ] <- (excode_model@prior_weights[i, ] - 1 + transMat[i, ]) / (sum(excode_model@prior_weights[i, ]) - ncol(transMat) + gammaSum[i])
+      log_dir <- log_dir + log_dirichlet(transMat[i, ], excode_model@prior_weights[i, ])
     }
-    log_dir1 <- log_dirichlet(transMat[1, ], excode_model@prior_weights[1, ])
-    log_dir2 <- log_dirichlet(transMat[2, ], excode_model@prior_weights[2, ])
   } else { # Update without prior
     for (i in 1:nrow(transMat)) {
       transMat[i, ] <- transMat[i, ] / gammaSum[i]
     }
   }
 
-  initProb_ind <- which(modelData$wtime == 0 & modelData$state == 0)
+  initProb_ind <- which(modelData$timepoint == 0 & modelData$state == 0)
   initProb <- gamma[initProb_ind, ]
   if (length(initProb_ind) > 1) {
     initProb <- apply(initProb, 2, sum)
@@ -183,7 +186,7 @@ updateTransInitProb <- function(excode_model, gamma, xsi, modelData) {
 
   excode_model@transitions <- transMat
   excode_model@initial_prob <- as.vector(initProb)
-  excode_model@loglik_transitions <- log_dir1 + log_dir2
+  excode_model@loglik_transitions <- log_dir
 
   excode_model
 }
@@ -236,11 +239,12 @@ updateTransInitProb <- function(excode_model, gamma, xsi, modelData) {
 setMethod("summary",
   signature = c("excodeModel"),
   function(object, pars = c(
-             "posterior", "pval", "date", "timepoint",
-             "observed", "emission", "id", "BIC", "AIC"
+             "posterior", "pval", "zscore", "date", "timepoint",
+             "observed", "emission", "BIC", "AIC"
            ),
            prob_threshold = 0.5,
-           pval_threshold = 0.01,
+           pval_threshold = 0.05,
+           anscombe_threshold = 2,
            maxiter = 1000) {
     emission_df <- NULL
     posterior_df <- NULL
@@ -288,39 +292,14 @@ setMethod("summary",
       res_df <- cbind(res_df, posterior_df)
     }
 
+    
     res_df <- res_df[pars_order]
 
-    if (object@nStates == 2) {
-      posterior_bound <- calcPosteriorBound(object, prob_threshold, maxiter)
-      posterior_bound$timepoint <- posterior_bound$timepoint_fit
-
-      res_df <- merge(res_df, posterior_bound,
-        by = c("timepoint_fit", "timepoint", "id"),
-        all.x = TRUE
-      )
-
-      pval_bound <- calcPvalueBound(
-        object@emission@distribution,
-        object, pval_threshold
-      )
-      pval_bound$timepoint <- pval_bound$timepoint_fit
-
-      res_df <- merge(res_df, pval_bound,
-        by = c("timepoint_fit", "timepoint", "id"),
-        all.x = TRUE
-      )
-    }
 
     if (remove_timpoint_fit) {
       pars_order <- pars_order[pars_order != "timepoint_fit"]
     }
 
-    if (object@nStates == 2) {
-      pars_order <- c(pars_order, "posterior_ub", "pval_ub")
-      pars_order <- pars_order[pars_order != "posterior0"]
-      pars_order[which(pars_order == "posterior1")] <- "posterior"
-      names(res_df)[names(res_df) == "posterior1"] <- "posterior"
-    }
 
     res_df[pars_order]
   }
@@ -343,5 +322,5 @@ setMethod("summary",
 #'
 #' @export
 setMethod(f = "plot", signature = "excodeModel", function(x) {
-  excode::plot_model(x)
+  excode:::plot_model(x)
 })

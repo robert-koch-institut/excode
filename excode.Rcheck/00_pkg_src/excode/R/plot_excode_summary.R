@@ -28,11 +28,7 @@ plot_excode_summary <- function(
     type             = c("line", "bar")
 ) {
   type <- match.arg(type)
-  excode_summary <- excode_summary %>% 
-    mutate(posterior0=ifelse(is.na(posterior0), 1, posterior0),
-           zscore=ifelse(is.na(zscore), 0, zscore),
-           pval=ifelse(is.na(pval), 1, pval))
-         
+  
   # infer mu columns / states
   mu_names <- grep("^mu\\d+$", names(excode_summary), value = TRUE)
   if (missing(states)) {

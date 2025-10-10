@@ -87,6 +87,40 @@ excodeModel(excode_family_pois, excode_formula_mean)
 base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
 base::cat("excodeModel", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
+nameEx("init_excode")
+### * init_excode
+
+flush(stderr()); flush(stdout())
+
+base::assign(".ptime", proc.time(), pos = "CheckExEnv")
+### Name: init_excode
+### Title: Initialize a multi-state EXCODE model from a surveillance time
+###   series
+### Aliases: init_excode
+
+### ** Examples
+
+## Not run: 
+##D # surv_ts must provide the columns referenced by the EXCODE formula.
+##D mod <- init_excode(
+##D   surv_ts   = my_surveillance_df,
+##D   timepoint = nrow(my_surveillance_df),
+##D   time_units_back = 156,           # ~3 years of weekly data
+##D   distribution = "nbinom",
+##D   states = 3,
+##D   time_trend = "Linear",
+##D   periodic_model = "Harmonic",
+##D   period_length = 52,
+##D   intercept = TRUE
+##D )
+## End(Not run)
+
+
+
+
+base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
+base::cat("init_excode", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
+cleanEx()
 nameEx("plot-excodeModel-ANY-method")
 ### * plot-excodeModel-ANY-method
 
@@ -108,27 +142,6 @@ base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
 base::cat("plot-excodeModel-ANY-method", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
 cleanEx()
-nameEx("plot_model")
-### * plot_model
-
-flush(stderr()); flush(stdout())
-
-base::assign(".ptime", proc.time(), pos = "CheckExEnv")
-### Name: plot_model
-### Title: Plot sts object with excode results
-### Aliases: plot_model
-
-### ** Examples
-
-
-# TODO
-
-
-
-
-base::assign(".dptime", (proc.time() - get(".ptime", pos = "CheckExEnv")), pos = "CheckExEnv")
-base::cat("plot_model", base::get(".format_ptime", pos = 'CheckExEnv')(get(".dptime", pos = "CheckExEnv")), "\n", file=base::get(".ExTimings", pos = 'CheckExEnv'), append=TRUE, sep="\t")
-cleanEx()
 nameEx("run_excode")
 ### * run_excode
 
@@ -137,40 +150,18 @@ flush(stderr()); flush(stdout())
 base::assign(".ptime", proc.time(), pos = "CheckExEnv")
 ### Name: run_excode
 ### Title: Detect Excess Counts in Epidemiological Time Series
-### Aliases: run_excode run_excode,sts,excodeModel-method
-###   run_excode,list,excodeModel-method
-###   run_excode,data.frame,excodeModel-method
+### Aliases: run_excode
 
 ### ** Examples
 
-
-# Creating a Poisson harmonic model for the examples
+# Create a Poisson harmonic model
 excode_family_pois <- excodeFamily("Poisson")
 excode_formula_har <- excodeFormula("Harmonic")
-excode_har_pois <- excodeModel(
-  excode_family_pois,
-  excode_formula_har
-)
-# Example 1: Using data.frame as input time series
+excode_har_pois <- excodeModel(excode_family_pois, excode_formula_har)
+
+# Example: data.frame as input
 data(shadar_df)
-result_shadar_har <- run_excode(shadar_df, excode_har_pois, 209:295)
-
-
-# Example 2: Using an sts object (from 'surveillance' package) as input time series
-library(surveillance)
-data(stsNewport)
-result_newport_har <- run_excode(stsNewport, excode_har_pois, 209:295)
-
-# Example 3: Using a named list of two sts objects as input
-stsShadar <- surveillance::sts(shadar_df$observed,
-  epoch = shadar_df$date,
-  state = shadar_df$state
-)
-named_list <- c("salmNewport" = stsNewport, "shadar" = stsShadar)
-result_list <- run_excode(
-  named_list,
-  excode_har_pois, 290
-)
+result_shadar_har <- run_excode(excode_har_pois, shadar_df, 209:295)
 
 
 

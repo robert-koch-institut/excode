@@ -8,7 +8,7 @@ setGeneric("extractModelData", function(survts, model_struct,
 
 setMethod("extractModelData",
   signature = c(
-    "sts",
+    "data.frame",
     "FarringtonNoufaily",
     "numeric", "numeric"
   ),
@@ -17,30 +17,29 @@ setMethod("extractModelData",
     allTimePoints <- rev(seq(time_point_to_consider, length = time_units_back * timepoints_per_unit + 1 + model_struct@w, by = -1))
     allTimePoints <- allTimePoints[allTimePoints > 0]
 
-    observed <- survts@observed[, 1]
-    state <- survts@state[, 1]
-    epochAsDate <- survts@epochAsDate
-    if (epochAsDate) {
-      vectorOfDates <- as.Date(survts@epoch, origin = "1970-01-01")
-    } else {
-      vectorOfDates <- seq_len(length(observed))
+    observed <- survts$observed
+    if(!"state" %in% names(survts)) {
+      survts$state <- NA
     }
+    state <- survts$state
+    vectorOfDates <- survts$date
     dayToConsider <- vectorOfDates[time_point_to_consider]
-    if (epochAsDate) {
+    
       epochStr <- switch(as.character(timepoints_per_unit),
         "12" = "month",
         "52" = "week",
         "365" = "day"
       )
-    } else {
-      epochStr <- "none"
-      allTimePoints <- allTimePoints[-1]
-    }
-    population <- surveillance::population(survts)
-
+      if (model_struct@offset) {
+        offset_denom <- survts$offset
+      } else {
+        offset_denom <- rep(1, length(observed))
+      }
+      survts$offset <- offset_denom
+      population <- survts$offset
     # Create data for Farrington GLM
     modelData <- algo.farrington.data.glm(
-      dayToConsider, time_units_back, timepoints_per_unit, epochAsDate,
+      dayToConsider, time_units_back, timepoints_per_unit, TRUE,
       epochStr, vectorOfDates, model_struct@w, model_struct@noPeriods,
       observed, population, FALSE,
       pastWeeksNotIncluded = 0,
@@ -48,22 +47,22 @@ setMethod("extractModelData",
     )[, 1:4]
 
     modelData$rtime <- allTimePoints - 1
-    modelData$true_state <- survts@state[modelData$rtime, 1]
-    if (!epochAsDate) {
-      modelData$wtime <- 0:(nrow(modelData) - 1)
-    }
-
+    modelData$true_state <- survts$state[modelData$rtime]
+    
+    names(modelData)[names(modelData)=="wtime"] <- "timepoint"
+    
     currTimePointData <- data.frame(
-      response = survts@observed[time_point_to_consider, 1],
-      wtime = modelData$wtime[nrow(modelData)] + 1,
-      population = survts@populationFrac[time_point_to_consider, 1],
-      true_state = survts@state[time_point_to_consider, 1],
+      response = survts$observed[time_point_to_consider],
+      timepoint = modelData$timepoint[nrow(modelData)] + 1,
+      population = survts$offset[time_point_to_consider],
+      true_state = survts$state[time_point_to_consider],
       seasgroups = model_struct@noPeriods,
       rtime = time_point_to_consider
     )
     modelData <- rbind(modelData, currTimePointData)
-    modelData$date <- epoch(survts)[modelData$rtime]
-
+    modelData$date <- survts$date[modelData$rtime]
+    modelData <- add_splines(modelData, model_struct@time_trend)
+    
     modelData
   }
 )
@@ -72,7 +71,7 @@ setMethod("extractModelData",
 
 setMethod("extractModelData",
   signature = c(
-    "sts",
+    "data.frame",
     "Mean",
     "numeric", "numeric"
   ),
@@ -80,30 +79,33 @@ setMethod("extractModelData",
     timepoints_per_unit <- model_struct@timepoints_per_unit
     allTimePoints <- rev(seq(time_point_to_consider, length = time_units_back * model_struct@timepoints_per_unit + 1, by = -1))
     allTimePoints <- allTimePoints[allTimePoints > 0]
-
-    states <- survts@state[, 1]
-    observed <- observed(survts)
+    if(!"state" %in% names(survts)) {
+      survts$state <- NA
+    }
+    states <- survts$state
+    observed <- survts$observed
     if (model_struct@offset) {
-      offset_denom <- surveillance::population(survts)
+      offset_denom <- survts$offset
     } else {
       offset_denom <- rep(1, length(observed))
     }
     modelData <- data.frame(
       response = observed[allTimePoints],
-      wtime = 0:(length(allTimePoints) - 1),
+      timepoint = 0:(length(allTimePoints) - 1),
       true_state = states[allTimePoints],
       rtime = allTimePoints,
       population = offset_denom[allTimePoints]
     )
-    modelData$date <- epoch(survts)[allTimePoints]
-
+    modelData$date <- survts$date[allTimePoints]
+    modelData <- add_splines(modelData, model_struct@time_trend)
+    
     modelData
   }
 )
 
 setMethod("extractModelData",
   signature = c(
-    "sts",
+    "data.frame",
     "Harmonic",
     "numeric", "numeric"
   ),
@@ -112,21 +114,24 @@ setMethod("extractModelData",
     allTimePoints <- rev(seq(time_point_to_consider, length = time_units_back * model_struct@timepoints_per_unit + 1, by = -1))
     allTimePoints <- allTimePoints[allTimePoints > 0]
 
-    states <- survts@state[, 1]
-    observed <- observed(survts)
+    if(!"state" %in% names(survts)) {
+      survts$state <- NA
+    }
+    states <- survts$state
+    observed <- survts$observed
     if (model_struct@offset) {
-      offset_denom <- surveillance::population(survts)
+      offset_denom <- survts$offset
     } else {
       offset_denom <- rep(1, length(observed))
     }
     modelData <- data.frame(
       response = observed[allTimePoints],
-      wtime = 0:(length(allTimePoints) - 1),
+      timepoint = 0:(length(allTimePoints) - 1),
       true_state = states[allTimePoints],
       rtime = allTimePoints,
       population = offset_denom[allTimePoints]
     )
-
+    
     if (model_struct@S > 0) {
       for (i in 1:model_struct@S) {
         sin_name <- paste("sin", i, sep = "")
@@ -135,70 +140,15 @@ setMethod("extractModelData",
         modelData[, cos_name] <- 0
         for (j in 1:i) {
           if (j == model_struct@S) {
-            modelData[, sin_name] <- modelData[, sin_name] + sin(2 * pi * j * modelData$wtime / model_struct@timepoints_per_unit)
-            modelData[, cos_name] <- modelData[, cos_name] + cos(2 * pi * j * modelData$wtime / model_struct@timepoints_per_unit)
+            modelData[, sin_name] <- modelData[, sin_name] + sin(2 * pi * j * modelData$timepoint / model_struct@timepoints_per_unit)
+            modelData[, cos_name] <- modelData[, cos_name] + cos(2 * pi * j * modelData$timepoint / model_struct@timepoints_per_unit)
           }
         }
       }
     }
-    modelData$date <- epoch(survts)[allTimePoints]
-
-    modelData
-  }
-)
-
-
-setMethod("extractModelData",
-  signature = c(
-    "sts",
-    "Splines",
-    "numeric", "numeric"
-  ),
-  function(survts, model_struct, time_point_to_consider, time_units_back) {
-    timepoints_per_unit <- model_struct@timepoints_per_unit
-    allTimePoints <- rev(seq(time_point_to_consider, length = time_units_back * model_struct@timepoints_per_unit + 1, by = -1))
-    allTimePoints <- allTimePoints[allTimePoints > 0]
-
-    states <- survts@state[, 1]
-    observed <- observed(survts)
-    if (model_struct@offset) {
-      offset_denom <- surveillance::population(survts)
-    } else {
-      offset_denom <- rep(1, length(observed))
-    }
-
-    modelData <- data.frame(
-      response = observed[allTimePoints],
-      wtime = 0:(length(allTimePoints) - 1),
-      true_state = states[allTimePoints],
-      rtime = allTimePoints,
-      population = offset_denom[allTimePoints]
-    )
-
-
-
-    if (model_struct@df_trend > 0) {
-      trend_df <- data.frame(ns(
-        1:nrow(modelData),
-        model_struct@df_trend
-      ))
-      names(trend_df) <- paste0("wtime_", 1:model_struct@df_trend)
-      modelData <- cbind(modelData, trend_df)
-    }
-    if (model_struct@df_season > 0) {
-      season_df <- data.frame(ns(
-        1:model_struct@timepoints_per_unit,
-        model_struct@df_season
-      ))
-      len <- nrow(modelData)
-      take <- rep(1:nrow(season_df), ceiling(len / model_struct@timepoints_per_unit))[1:nrow(modelData)]
-      season_df <- season_df[take, ]
-      names(season_df) <- paste0("season_", 1:model_struct@df_season)
-
-      modelData <- cbind(modelData, season_df)
-    }
-    modelData$date <- epoch(survts)[allTimePoints]
-
+    modelData$date <- survts$date[allTimePoints]
+    modelData <- add_splines(modelData, model_struct@time_trend)
+    
     modelData
   }
 )
@@ -206,21 +156,24 @@ setMethod("extractModelData",
 
 
 
+
 setMethod("extractModelData",
   signature = c(
-    "sts",
+    "data.frame",
     "Custom",
     "numeric", "numeric"
   ),
   function(survts, model_struct, time_point_to_consider, time_units_back) {
     allTimePoints <- rev(seq(time_point_to_consider, length = round(time_units_back * model_struct@timepoints_per_unit + 1), by = -1))
     allTimePoints <- allTimePoints[allTimePoints > 0]
-
-    states <- survts@state[, 1]
-    observed <- observed(survts)
+    if(!"state" %in% names(survts)) {
+      survts$state <- NA
+    }
+    states <- survts$state
+    observed <- survts$observed
 
     if (model_struct@offset) {
-      offset_denom <- surveillance::population(survts)
+      offset_denom <- survts$offset
     } else {
       offset_denom <- rep(1, length(observed))
     }
@@ -228,11 +181,11 @@ setMethod("extractModelData",
     modelData <- data.frame(
       response = observed[allTimePoints],
       true_state = states[allTimePoints],
-      wtime = 0:(length(allTimePoints) - 1),
+      timepoint = 0:(length(allTimePoints) - 1),
       rtime = allTimePoints,
       population = offset_denom[allTimePoints]
     )
-    modelData$date <- epoch(survts)[allTimePoints]
+    modelData$date <- survts$date[allTimePoints]
     data <- model_struct@data[allTimePoints, , drop = F]
     modelData <- cbind(modelData, data)
 
@@ -243,22 +196,32 @@ setMethod("extractModelData",
 
 setMethod("extractModelData",
   signature = c(
-    "sts",
+    "data.frame",
     "MultiState",
     "numeric", "numeric"
   ),
   function(survts, model_struct, time_point_to_consider, time_units_back) {
+    #if(all(!is.na(model_struct@data_timepoints))) {
+    #  print(nrow(survts))
+    #  survts <- survts[model_struct@data_timepoints,]
+    #  print(nrow(survts))
+    #  time_point_to_consider <- which(time_point_to_consider==model_struct@data_timepoints)
+    #} 
+    
     allTimePoints <- rev(seq(time_point_to_consider,
-      length = round(time_units_back * model_struct@timepoints_per_unit + 1),
-      by = -1
-    ))
+                               length = round(time_units_back * model_struct@timepoints_per_unit + 1),
+                               by = -1
+      ))
+    
     allTimePoints <- allTimePoints[allTimePoints > 0]
-
-    states <- survts@state[, 1]
-    observed <- observed(survts)
+    if(!"state" %in% names(survts)) {
+      survts$state <- NA
+    }
+    states <- survts$state
+    observed <- survts$observed
 
     if (model_struct@offset) {
-      offset_denom <- surveillance::population(survts)
+      offset_denom <- survts$offset
     } else {
       offset_denom <- rep(1, length(observed))
     }
@@ -269,14 +232,14 @@ setMethod("extractModelData",
       rtime = allTimePoints,
       population = offset_denom[allTimePoints]
     )
-    modelData$date <- epoch(survts)[allTimePoints]
+    modelData$date <- survts$date[allTimePoints]
     if (nrow(model_struct@data) > 0 & ncol(model_struct@data) > 0) {
       data <- model_struct@data[allTimePoints, , drop = F]
       modelData <- cbind(modelData, data)
     }
 
     rownames(modelData) <- NULL
-    modelData$wtime <- 0:(nrow(modelData) - 1)
+    modelData$timepoint <- 0:(nrow(modelData) - 1)
     modelData
   }
 )
@@ -305,24 +268,18 @@ setMethod("addDistrData",
 )
 
 setGeneric("prepareData", function(survts, hmm, time_point_to_consider,
-                                   id, time_units_back = as.numeric(5),
-                                   past_weeks_not_included_training = as.numeric(0),
-                                   past_weeks_not_included_state = as.numeric(26),
-                                   past_weeks_not_included_init = as.numeric(26)) {
+                                   id, time_units_back = as.numeric(5)) {
   standardGeneric("prepareData")
 })
 
 setMethod("prepareData",
   signature = c(
-    "sts", "excodeModel", "ANY",
-    "ANY", "ANY", "ANY",
+    "data.frame", "excodeModel", "ANY",
     "ANY", "ANY"
   ),
   function(survts, hmm, time_point_to_consider,
-           id, time_units_back,
-           past_weeks_not_included_training,
-           past_weeks_not_included_state,
-           past_weeks_not_included_init) {
+           id, time_units_back) {
+    
     modelData <- extractModelData(
       survts, hmm@emission@excode_formula,
       time_point_to_consider, time_units_back
@@ -331,66 +288,33 @@ setMethod("prepareData",
     modelData$id <- id
     modelData <- addDistrData(hmm@emission@distribution, modelData)
 
-    modelData$init <- TRUE
-    if (past_weeks_not_included_init > 0) {
-      start_ind <- nrow(modelData) - past_weeks_not_included_init - 1
-      modelData$init[start_ind:nrow(modelData)] <- FALSE
-    }
-
-    modelData$training <- TRUE
-    if (past_weeks_not_included_training > 0) {
-      start_ind <- nrow(modelData) - past_weeks_not_included_training
-      modelData$training[start_ind:nrow(modelData)] <- FALSE
-    }
-
-    modelData$state_training <- TRUE
-    if (past_weeks_not_included_state > 0) {
-      start_ind <- nrow(modelData) - past_weeks_not_included_state - 1
-      modelData$state_training[start_ind:nrow(modelData)] <- FALSE
-    }
 
     modelData$curr_week <- FALSE
     modelData$curr_week[nrow(modelData)] <- TRUE
-
+    
     modelData
   }
 )
 
-setMethod("prepareData",
-  signature = c(
-    "list", "excodeModel", "ANY",
-    "ANY", "ANY", "ANY",
-    "ANY", "ANY"
-  ),
-  function(survts, hmm, time_point_to_consider,
-           id, time_units_back,
-           past_weeks_not_included_training,
-           past_weeks_not_included_state,
-           past_weeks_not_included_init) {
-    if (length(names(survts)) == 0) {
-      names(survts) <- paste0("id", 1:length(survts))
-    }
 
-    modelData <- list()
-    id_rep <- sapply(names(survts), function(x) rep(x, nrow(survts[[x]]@observed)))
-    for (n in names(survts)) {
-      curr_hmm <- hmm
-      if ("data" %in% slotNames(hmm@emission@excode_formula)) {
-        if (nrow(hmm@emission@excode_formula@data) > 0) {
-          take_subset <- which(n == id_rep)
-          curr_hmm@emission@excode_formula@data <- curr_hmm@emission@excode_formula@data[take_subset, , drop = FALSE]
-        }
-      }
-      modelData[[n]] <- prepareData(survts[[n]], curr_hmm, time_point_to_consider,
-        id = n, time_units_back,
-        past_weeks_not_included_training,
-        past_weeks_not_included_init
-      )
-      rownames(modelData[[n]]) <- NULL
-    }
-
-    modelData <- do.call("rbind", modelData)
-    rownames(modelData) <- NULL
-    modelData
+add_splines <- function(model_data, time_trend) {
+  
+  #if (!time_trend %in% c("Linear", "Spline1", "Spline2", "None")) {
+  #  stop("Invalid value for 'time_trend'. Must be one of: 'Linear', 'Spline1', 'Spline2', 'None'.")
+  #}
+  
+  timepoint <- model_data$timepoint
+  if(length(grep("Spline", time_trend))==1) {# %in% c("Spline1", "Spline2")) {
+    n_knots <- as.numeric(gsub("Spline", "", time_trend))
+    t_knots <- round(seq(1, length(timepoint), 
+                         length=n_knots+2)[-c(1,n_knots+2)])
+    spline_df <- as.data.frame(ns(timepoint, 
+                                  knots=t_knots))
+    names(spline_df) <- paste0("t_spline", 1:ncol(spline_df))
+    spline_df$timepoint <- timepoint
+    model_data <- left_join(model_data, 
+                            spline_df,
+                            by="timepoint")
   }
-)
+  model_data
+}

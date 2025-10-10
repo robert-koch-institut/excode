@@ -25,9 +25,9 @@ NegBinom-class          This class is a generic container for a family
                         of Negative Binomial distributions
 Poisson-class           This class is a generic container for a family
                         of Poisson distributions
-Splines-class           This class is a container for the
-                        parameterization of Spline models. This class
-                        is experimental and not recommended for use!
+compute_baseline_state
+                        Update EXCODE model by setting baseline states
+                        in surv_ts
 excodeFamily            Create a family of probability distributions
                         for excess count detection.
 excodeFamily-class      This class is a generic container for a family
@@ -40,10 +40,12 @@ excodeFormula-class     This class is a generic container for a formula
 excodeModel             Create a model for excess count detection
 excodeModel-class       This class is a generic container for the model
                         used for outbreak detection
+init_excode             Initialize a multi-state EXCODE model from a
+                        surveillance time series
 mort_df_germany         German all-cause mortality data
 plot,excodeModel,ANY-method
                         Summary of an excodeModel.
-plot_model              Plot sts object with excode results
+plot_excode_summary     Plot excode summary
 run_excode              Detect Excess Counts in Epidemiological Time
                         Series
 sarscov2_df             SARS-CoV-2 infections in Berlin-Neukölln

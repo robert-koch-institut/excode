@@ -1,30 +1,10 @@
-fitUnsupervised <- function(hmm, modelData, transMat_init, learning_type = "unsupervised", maxIter, verbose, time_units_back) {
+fitUnsupervised <- function(hmm, modelData, transMat_init, maxIter, verbose, time_units_back) {
   model_init <- NULL
   model <- NULL
-  if (hmm@nStates == 2) {
-    if (length(unique(modelData$id)) == 1 &
-      !hmm@emission@excode_formula@shared_params) {
-      hmm@emission@excode_formula@shared_params <- TRUE
-      formula_bckg <- createFormula(
-        hmm@emission@distribution,
-        hmm@emission@excode_formula
-      )
-      formula <- paste0(formula_bckg, " + state")
-      hmm@emission@excode_formula@formula <- formula
-      hmm@emission@excode_formula@formula_bckg <- formula_bckg
-    }
-
-    model_init <- initGLM(hmm, modelData,
-      learning = learning_type,
-      setBckgState = hmm@setBckgState
-    )
-  } else if (hmm@nStates > 2) {
-    model_init <- init_glm_mutlistate(hmm, modelData,
-      learning = learning_type,
-      setBckgState = hmm@setBckgState
-    )
-  }
-
+ 
+  model_init <- init_glm_mutlistate(hmm, modelData,
+      setBckgState = hmm@setBckgState)
+  
   model <- model_init$model
   hmm@emission <- model_init$emission
 
@@ -36,6 +16,7 @@ fitUnsupervised <- function(hmm, modelData, transMat_init, learning_type = "unsu
     )),
     nrow = hmm@nStates, ncol = hmm@nStates
   )
+  
   # Calculate stationary state distribution
   n <- ncol(transMat_init)
   A <- t(transMat_init - diag(n))
@@ -43,11 +24,10 @@ fitUnsupervised <- function(hmm, modelData, transMat_init, learning_type = "unsu
   b <- c(rep(0, n), 1)
   stationary_state <- qr.solve(A, b)
   # Calculate prior weights
-  prior_weights <- transMat_init * base_weight * stationary_state
-
+  prior_weights <- round(transMat_init * base_weight * stationary_state + 1)
   hmm@prior_weights <- prior_weights
   initProb <- hmm@initial_prob
-
+  hmm@transitions <- matrix(1/hmm@nStates, nrow = hmm@nStates, ncol = hmm@nStates)
   emission_prob <- calcEmissionProb(hmm@emission@distribution, model)
   hmm_expectation <- forwardBackward(hmm, model, emission_prob)
 
@@ -84,7 +64,6 @@ fitUnsupervised <- function(hmm, modelData, transMat_init, learning_type = "unsu
 
     emission_prob <- calcEmissionProb(hmm@emission@distribution, model)
     hmm_expectation <- forwardBackward(hmm, model, emission_prob)
-
     new_loglik <- hmm_expectation$LogLik + hmm@loglik_transitions
 
     curr_diff <- (new_loglik - old_loglik) / abs(old_loglik)

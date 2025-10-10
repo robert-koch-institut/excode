@@ -6,10 +6,11 @@
 \usage{
 \S4method{summary}{excodeModel}(
   object,
-  pars = c("posterior", "pval", "date", "timepoint", "observed", "emission", "id", "BIC",
-    "AIC"),
+  pars = c("posterior", "pval", "zscore", "date", "timepoint", "observed", "emission",
+    "BIC", "AIC"),
   prob_threshold = 0.5,
-  pval_threshold = 0.01,
+  pval_threshold = 0.05,
+  anscombe_threshold = 2,
   maxiter = 1000
 )
 }

@@ -11,7 +11,9 @@ setClass("Emission",
     name = "character",
     mu = "matrix",
     mu0 = "numeric",
-    mu1 = "numeric"
+    mu1 = "numeric",
+    excode_formula = "excodeFormula",
+    glm = "glm"
   )
 )
 
@@ -27,8 +29,7 @@ setClass("Emission",
 setClass("EmissionGLMPoisson",
   contains = "Emission",
   slots = c(
-    distribution = "Poisson",
-    excode_formula = "excodeFormula"
+    distribution = "Poisson"
   )
 )
 
@@ -44,8 +45,7 @@ setClass("EmissionGLMPoisson",
 setClass("EmissionGLMNegBinom",
   contains = "Emission",
   slots = c(
-    distribution = "NegBinom",
-    excode_formula = "excodeFormula"
+    distribution = "NegBinom"
   )
 )
 
@@ -60,21 +60,25 @@ setClass("EmissionGLMNegBinom",
 #'
 #' @export
 Emission <- function(distribution, excode_formula, initial_mu = NULL) {
-  formula_bckg <- createFormula(distribution, excode_formula)
+  formula_bckg <- create_formula(distribution, excode_formula)
   formula <- paste0(formula_bckg, " + state")
   excode_formula@formula <- formula
   excode_formula@formula_bckg <- formula_bckg
-
+  empty_glm <- list()
+  class(empty_glm) <- "glm"
+  
   obj <- NULL
   if (!is.null(initial_mu)) {
     obj <- new(paste0("EmissionGLM", is(distribution)[1]),
       distribution = distribution,
-      excode_formula = excode_formula, mu = initial_mu
+      excode_formula = excode_formula, mu = initial_mu,
+      glm=empty_glm
     )
   } else {
     obj <- new(paste0("EmissionGLM", is(distribution)[1]),
       distribution = distribution,
-      excode_formula = excode_formula
+      excode_formula = excode_formula,
+      glm=empty_glm
     )
   }
 }
@@ -99,6 +103,66 @@ setGeneric("updateEmission", function(emission, dat, omega) standardGeneric("upd
 
 
 
+#' @title Returns Anscombe residuals for a fitted Emission.
+#'
+#' @param emission An \code{\linkS4class{Emission}} object.
+#' @returns A vector containing the Anscombe residuals for the fitted baseline state.
+#'
+#' @seealso \code{\linkS4class{Emission}}
+#'
+#' @keywords internal
+#' @noRd
+setGeneric("zscores", function(emission, model_data) standardGeneric("zscores"))
+
+setMethod("zscores",
+          signature = c("EmissionGLMPoisson", "data.frame"),
+          function(emission, model_data) {
+            rA <- NULL
+            mu <- model_data$mu[model_data$state==0]
+            observed <- model_data$response[model_data$state==0]
+            phi <- max(c(1, summary(emission@glm)$dispersion))
+            numer <- 3 * (observed^(2/3) - mu^(2/3))
+            denom <- 2 * sqrt(phi * mu^(1/3))
+            rA <- numer / denom
+            as.vector(rA)
+          }
+)
+
+
+setMethod("zscores",
+          signature = c("EmissionGLMNegBinom", "data.frame"),
+          function(emission, model_data) {
+            rA <- NULL
+            
+            glm_data <- model.frame(emission@glm)#model_data#
+            glm_formula <- emission@excode_formula@formula
+            col_pop <- which(names(glm_data)=="offset(log(population))")
+            names(glm_data)[col_pop] <- "population"
+            col_w <- which(names(glm_data)=="(weights)")
+            names(glm_data)[col_w] <- "weights"
+            
+            glm_data$population <- exp(glm_data$population)
+            glm_weights <- glm_data$weights
+            glm_data <- glm_data[,-col_w]
+            
+            non_zero_w <- which(glm_weights>0)
+            glm_qpois <- glm(as.formula(glm_formula), 
+                             data=glm_data[non_zero_w,], 
+                             weights=glm_weights[non_zero_w],
+                             family=quasipoisson())
+            
+            mu <- predict(glm_qpois, newdata=model_data,
+                          type="response")[model_data$state==0]
+            observed <- model_data$response[model_data$state==0]
+            phi <- max(c(1, summary(glm_qpois)$dispersion))
+            numer <- 3 * (observed^(2/3) - mu^(2/3))
+            denom <- 2 * sqrt(phi * mu^(1/3))
+            rA <- numer / denom
+            as.vector(rA)
+          }
+)
+
+
 #' @title Returns estimated parameters of an excodeFamily.
 #'
 #' @param emission An \code{\linkS4class{Emission}} object.
@@ -111,17 +175,18 @@ setGeneric("updateEmission", function(emission, dat, omega) standardGeneric("upd
 setGeneric("summary_emission", function(emission) standardGeneric("summary_emission"))
 
 setMethod("summary_emission",
-  signature = c("Emission"),
-  function(emission) {
-    family_df <- summary_family(emission@distribution)
-    # emission_df <- data.frame(mu0=emission@mu0,
-    #                          mu1=emission@mu1)
-    emission_df <- data.frame(emission@mu)
-    names(emission_df) <- paste0("mu", 0:(ncol(emission_df) - 1))
-    emission_summary <- emission_df
-    if (!is.null(family_df)) {
-      emission_summary <- cbind(emission_summary, family_df)
-    }
-    emission_summary
-  }
+          signature = c("Emission"),
+          function(emission) {
+            family_df <- summary_family(emission@distribution)
+            # emission_df <- data.frame(mu0=emission@mu0,
+            #                          mu1=emission@mu1)
+            emission_df <- data.frame(emission@mu)
+            names(emission_df) <- paste0("mu", 0:(ncol(emission_df) - 1))
+            emission_summary <- emission_df
+            if (!is.null(family_df)) {
+              emission_summary <- cbind(emission_summary, family_df)
+            }
+            emission_summary
+          }
 )
+
