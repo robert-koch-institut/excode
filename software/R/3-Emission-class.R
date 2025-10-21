@@ -1,17 +1,19 @@
-#' This class is a generic container for the model used for excess count detection, which defines the probability distributions.
+#' @title Emission Class
 #'
-#' @slot name Name of the emission.
-#' @slot mu Matrix that stores in each column the mean for the respective state.
-#' @slot mu0 Numeric vector containing the mean for the 'normal' state in 2-state models.
-#' @slot mu1 Numeric vector containing the mean for the 'excess' state in 2-state models. Name of the emission.
+#' @description The `Emission` class is a generic container for the model used in excess count detection. It defines the probability distributions that describe the emission process in the model.
+#'
+#' @slot name A character string giving the name of the emission.
+#' @slot mu A numeric matrix where each column stores the mean (`mu`) for the respective hidden state of the model.
+#' @slot excode_formula An object of class `excodeFormula` specifying the model formula used to describe the emission process.
+#' @slot glm An object of class `glm` representing the fitted generalized linear model for the emission.
+#'
+#' @seealso [stats::glm()] for generalized linear models; [methods::setClass()] for S4 class definitions.
 #'
 #' @exportClass Emission
 setClass("Emission",
   slots = c(
     name = "character",
     mu = "matrix",
-    mu0 = "numeric",
-    mu1 = "numeric",
     excode_formula = "excodeFormula",
     glm = "glm"
   )
@@ -66,19 +68,19 @@ Emission <- function(distribution, excode_formula, initial_mu = NULL) {
   excode_formula@formula_bckg <- formula_bckg
   empty_glm <- list()
   class(empty_glm) <- "glm"
-  
+
   obj <- NULL
   if (!is.null(initial_mu)) {
     obj <- new(paste0("EmissionGLM", is(distribution)[1]),
       distribution = distribution,
       excode_formula = excode_formula, mu = initial_mu,
-      glm=empty_glm
+      glm = empty_glm
     )
   } else {
     obj <- new(paste0("EmissionGLM", is(distribution)[1]),
       distribution = distribution,
       excode_formula = excode_formula,
-      glm=empty_glm
+      glm = empty_glm
     )
   }
 }
@@ -102,7 +104,6 @@ Emission <- function(distribution, excode_formula, initial_mu = NULL) {
 setGeneric("updateEmission", function(emission, dat, omega) standardGeneric("updateEmission"))
 
 
-
 #' @title Returns Anscombe residuals for a fitted Emission.
 #'
 #' @param emission An \code{\linkS4class{Emission}} object.
@@ -115,51 +116,62 @@ setGeneric("updateEmission", function(emission, dat, omega) standardGeneric("upd
 setGeneric("zscores", function(emission, model_data) standardGeneric("zscores"))
 
 setMethod("zscores",
-          signature = c("EmissionGLMPoisson", "data.frame"),
-          function(emission, model_data) {
-            rA <- NULL
-            mu <- model_data$mu[model_data$state==0]
-            observed <- model_data$response[model_data$state==0]
-            phi <- max(c(1, summary(emission@glm)$dispersion))
-            numer <- 3 * (observed^(2/3) - mu^(2/3))
-            denom <- 2 * sqrt(phi * mu^(1/3))
-            rA <- numer / denom
-            as.vector(rA)
-          }
+  signature = c("EmissionGLMPoisson", "data.frame"),
+  function(emission, model_data) {
+    glm_data <- model.frame(emission@glm) # model_data#
+    col_w <- which(names(glm_data) == "(weights)")
+    names(glm_data)[col_w] <- "weights"
+    glm_weights <- glm_data$weights
+    baseline_state <- which(model_data$state == 0)
+    glm_weights <- glm_weights[baseline_state]
+    formula_baseline <- as.formula(emission@excode_formula@formula_bckg)
+    # print(c(length(gamma), sum(gamma)))
+    downweighted <- (glm_weights < 1)
+
+    gamma <- length(glm_weights) / (sum(glm_weights^(downweighted)))
+    omega <- numeric(length(glm_weights))
+    omega[downweighted] <- gamma * (glm_weights[downweighted])
+    omega[!downweighted] <- gamma
+
+    suppressWarnings(qpois_model <- glm(formula_baseline,
+      data = model_data[baseline_state, ],
+      family = quasipoisson(link = "log"),
+      weights = omega
+    ))
+    phi <- max(summary(qpois_model)$dispersion, 1)
+    qpois_anscombe_res <- surveillance::anscombe.residuals(qpois_model, phi)
+    as.vector(qpois_anscombe_res)
+  }
 )
 
 
 setMethod("zscores",
-          signature = c("EmissionGLMNegBinom", "data.frame"),
-          function(emission, model_data) {
-            rA <- NULL
-            
-            glm_data <- model.frame(emission@glm)#model_data#
-            glm_formula <- emission@excode_formula@formula
-            col_pop <- which(names(glm_data)=="offset(log(population))")
-            names(glm_data)[col_pop] <- "population"
-            col_w <- which(names(glm_data)=="(weights)")
-            names(glm_data)[col_w] <- "weights"
-            
-            glm_data$population <- exp(glm_data$population)
-            glm_weights <- glm_data$weights
-            glm_data <- glm_data[,-col_w]
-            
-            non_zero_w <- which(glm_weights>0)
-            glm_qpois <- glm(as.formula(glm_formula), 
-                             data=glm_data[non_zero_w,], 
-                             weights=glm_weights[non_zero_w],
-                             family=quasipoisson())
-            
-            mu <- predict(glm_qpois, newdata=model_data,
-                          type="response")[model_data$state==0]
-            observed <- model_data$response[model_data$state==0]
-            phi <- max(c(1, summary(glm_qpois)$dispersion))
-            numer <- 3 * (observed^(2/3) - mu^(2/3))
-            denom <- 2 * sqrt(phi * mu^(1/3))
-            rA <- numer / denom
-            as.vector(rA)
-          }
+  signature = c("EmissionGLMNegBinom", "data.frame"),
+  function(emission, model_data) {
+    glm_data <- model.frame(emission@glm) # model_data#
+    col_w <- which(names(glm_data) == "(weights)")
+    names(glm_data)[col_w] <- "weights"
+    glm_weights <- glm_data$weights
+    baseline_state <- which(model_data$state == 0)
+    glm_weights <- glm_weights[baseline_state]
+    formula_baseline <- as.formula(emission@excode_formula@formula_bckg)
+    # print(c(length(gamma), sum(gamma)))
+    downweighted <- (glm_weights < 1)
+
+    gamma <- length(glm_weights) / (sum(glm_weights^(downweighted)))
+    omega <- numeric(length(glm_weights))
+    omega[downweighted] <- gamma * (glm_weights[downweighted])
+    omega[!downweighted] <- gamma
+
+    suppressWarnings(qpois_model <- glm(formula_baseline,
+      data = model_data[baseline_state, ],
+      family = quasipoisson(link = "log"),
+      weights = omega
+    ))
+    phi <- max(summary(qpois_model)$dispersion, 1)
+    qpois_anscombe_res <- surveillance::anscombe.residuals(qpois_model, phi)
+    as.vector(qpois_anscombe_res)
+  }
 )
 
 
@@ -175,18 +187,15 @@ setMethod("zscores",
 setGeneric("summary_emission", function(emission) standardGeneric("summary_emission"))
 
 setMethod("summary_emission",
-          signature = c("Emission"),
-          function(emission) {
-            family_df <- summary_family(emission@distribution)
-            # emission_df <- data.frame(mu0=emission@mu0,
-            #                          mu1=emission@mu1)
-            emission_df <- data.frame(emission@mu)
-            names(emission_df) <- paste0("mu", 0:(ncol(emission_df) - 1))
-            emission_summary <- emission_df
-            if (!is.null(family_df)) {
-              emission_summary <- cbind(emission_summary, family_df)
-            }
-            emission_summary
-          }
+  signature = c("Emission"),
+  function(emission) {
+    family_df <- summary_family(emission@distribution)
+    emission_df <- data.frame(emission@mu)
+    names(emission_df) <- paste0("mu", 0:(ncol(emission_df) - 1))
+    emission_summary <- emission_df
+    if (!is.null(family_df)) {
+      emission_summary <- cbind(emission_summary, family_df)
+    }
+    emission_summary
+  }
 )
-

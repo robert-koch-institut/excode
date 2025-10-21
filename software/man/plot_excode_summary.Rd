@@ -2,41 +2,101 @@
 % Please edit documentation in R/plot_excode_summary.R
 \name{plot_excode_summary}
 \alias{plot_excode_summary}
-\title{Plot excode summary}
+\title{Plot EXCODE summary diagnostics across multiple panels}
 \usage{
 plot_excode_summary(
   excode_summary,
   states,
   posterior_cutoff = 0.5,
-  zscore_cutoff = 2.33,
-  p_cutoff = 0.01,
+  zscore_cutoff = 2,
+  p_cutoff = 0.025,
   type = c("line", "bar")
 )
 }
 \arguments{
-\item{excode_summary}{A data frame containing model summary output with columns:
-\code{date}, \code{observed}, \code{posterior0}, \code{zscore},
-\code{pval}, and one or more fitted mean columns named \code{mu0}, \code{mu1}, etc.}
+\item{excode_summary}{A data frame (or tibble) with at least the columns:
+\itemize{
+  \item \code{date}: Date or POSIXt.
+  \item \code{observed}: Numeric observed counts.
+  \item \code{posterior0}: Numeric posterior probability of \emph{no} excess (can contain \code{NA}, treated as 1).
+  \item \code{zscore}: Numeric z-score (can contain \code{NA}, treated as 0).
+  \item \code{pval}: Numeric p-value (can contain \code{NA}, treated as 1).
+  \item One or more columns named \code{mu0}, \code{mu1}, … with model fits.
+}}
 
-\item{states}{Integer. Number of model states (i.e., fitted mean columns \code{mu0}, \code{mu1}, ...).
-If missing, this will be inferred automatically from the column names.}
+\item{states}{Optional integer giving the number of latent states (i.e., how
+many \code{mu*} series to consider). If missing, it is inferred from the
+available columns matching \code{"^mu\\d+$"}. If provided, only
+\code{mu0} through \code{mu{states-1}} that exist in \code{excode_summary}
+are used.}
 
-\item{posterior_cutoff}{Numeric (default = 0.5). Threshold for classifying excess probability
-(\eqn{1 - posterior0 > posterior_cutoff}).}
+\item{posterior_cutoff}{Numeric in \eqn{[0,1]}. Horizontal reference line and
+threshold for the excess probability panel (default \code{0.5}).}
 
-\item{zscore_cutoff}{Numeric (default = 2.33). Threshold for Anscombe residuals.}
+\item{zscore_cutoff}{Numeric. Horizontal reference line and threshold for the
+z-score panel (default \code{2}).}
 
-\item{p_cutoff}{Numeric (default = 0.01). Significance threshold for p-values.}
+\item{p_cutoff}{Numeric in \eqn{(0,1]}. Transformed to \eqn{-\log_{10}}
+for the p-value panel and used as a threshold in the tiles (default \code{0.025}).}
 
-\item{type}{Character. Either "line" (default) or "bar".
-- Top panel: mu* always lines/steps; observed is line ("line") or bars ("bar").
-- Diagnostics: ribbons ("line") or bars ("bar").}
+\item{type}{Character, either \code{"line"} or \code{"bar"} (partial matching
+disabled via \code{match.arg}). Controls whether panels are drawn with
+ribbons/lines (\code{"line"}) or columns (\code{"bar"}). In the first panel,
+\code{"bar"} draws \code{observed} as bars and \code{mu*} as steps; \code{"line"}
+draws all series as lines.}
 }
 \value{
-A combined ggplot2 object.
+A \code{patchwork} object (composed of \pkg{ggplot2} plots) that can be
+further modified with \code{+} (e.g., themes, scales) or saved with \code{ggsave()}.
 }
 \description{
-Creates a multi-panel diagnostic plot summarizing excess mortality model results,
-including observed cases, model fits, posterior excess probability, Anscombe residuals,
-and p-values. Allows user-defined cutoff thresholds for each diagnostic.
+Visualizes an EXCODE summary as a multi-panel figure showing
+(i) observed counts with model fits (`mu*`),
+(ii) excess probability \eqn{1 - \mathrm{posterior0}},
+(iii) z-scores,
+(iv) \eqn{-\log_{10}(p\text{-value})}, and
+(v) threshold “tiles” indicating which metrics exceed user-defined cutoffs.
+}
+\details{
+Missing values are handled defensively before plotting:
+\code{posterior0 = 1} (no excess), \code{zscore = 0}, \code{pval = 1}.
+A consistent black/green/orange-red palette is used for the first panel:
+observed in black; \code{mu0} in green; remaining \code{mu*} from gold to tomato.
+Facet strips are placed on the right and a common theme is applied so panels
+align cleanly when combined with \pkg{patchwork}.
+
+The final plot stacks five panels (from top to bottom):
+\enumerate{
+  \item Observed counts and model fits.
+  \item Excess probability \eqn{1 - \mathrm{posterior0}} with a dotted cutoff.
+  \item z-score with a dotted cutoff (ribbon handles positive/negative).
+  \item \eqn{-\log_{10}(p)} with a dotted cutoff at \eqn{-\log_{10}(\mathrm{p\_cutoff})}.
+  \item Binary “tiles” summarizing whether each metric exceeds its cutoff.
+}
+}
+\section{Required packages}{
+
+Relies on \pkg{ggplot2}, \pkg{dplyr}, \pkg{tidyr}, \pkg{patchwork},
+\pkg{grid}, and \pkg{grDevices}.
+}
+
+\examples{
+
+data(shadar_df)
+res_har_pois <- run_excode(
+  surv_ts = shadar_df,
+  timepoints = 295,
+  distribution = "Poisson",
+  states = 2,
+  periodic_model = "Harmonic",
+  time_trend = "Linear",
+  set_baseline_state = TRUE
+)
+sum_har_pois <- summary(res_har_pois)
+plot_excode_summary(sum_har_pois, type="bar")
+
+}
+\seealso{
+\code{\link[patchwork]{plot_layout}}, \code{\link[ggplot2]{ggplot}},
+\code{\link[dplyr]{mutate}}, \code{\link[tidyr]{pivot_longer}}
 }

@@ -10,8 +10,6 @@ This class is a generic container for a family of Negative Binomial distribution
 \section{Slots}{
 
 \describe{
-\item{\code{shared_nb_size}}{Logical indicating whether nb_size parameter is shared across multiple time series during model estimation.}
-
 \item{\code{nb_size}}{Size parameter of the Negative Binomial distribution. Only relevant if 'MultiState' model is used with a Negative Binomial dsitribution.}
 }}
 

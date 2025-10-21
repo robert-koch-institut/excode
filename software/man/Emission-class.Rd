@@ -3,19 +3,22 @@
 \docType{class}
 \name{Emission-class}
 \alias{Emission-class}
-\title{This class is a generic container for the model used for excess count detection, which defines the probability distributions.}
+\title{Emission Class}
 \description{
-This class is a generic container for the model used for excess count detection, which defines the probability distributions.
+The `Emission` class is a generic container for the model used in excess count detection. It defines the probability distributions that describe the emission process in the model.
 }
 \section{Slots}{
 
 \describe{
-\item{\code{name}}{Name of the emission.}
+\item{\code{name}}{A character string giving the name of the emission.}
 
-\item{\code{mu}}{Matrix that stores in each column the mean for the respective state.}
+\item{\code{mu}}{A numeric matrix where each column stores the mean (`mu`) for the respective hidden state of the model.}
 
-\item{\code{mu0}}{Numeric vector containing the mean for the 'normal' state in 2-state models.}
+\item{\code{excode_formula}}{An object of class `excodeFormula` specifying the model formula used to describe the emission process.}
 
-\item{\code{mu1}}{Numeric vector containing the mean for the 'excess' state in 2-state models. Name of the emission.}
+\item{\code{glm}}{An object of class `glm` representing the fitted generalized linear model for the emission.}
 }}
 
+\seealso{
+[stats::glm()] for generalized linear models; [methods::setClass()] for S4 class definitions.
+}

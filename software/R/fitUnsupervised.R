@@ -1,22 +1,21 @@
 fitUnsupervised <- function(hmm, modelData, transMat_init, maxIter, verbose, time_units_back) {
   model_init <- NULL
   model <- NULL
- 
+
   model_init <- init_glm_mutlistate(hmm, modelData,
-      setBckgState = hmm@setBckgState)
-  
+    setBckgState = hmm@setBckgState
+  )
+
   model <- model_init$model
   hmm@emission <- model_init$emission
-
-  nid <- length(unique(modelData$id))
   base_weight <- matrix(
     min(c(
       nrow(modelData),
-      time_units_back * hmm@emission@excode_formula@timepoints_per_unit * nid
+      time_units_back * hmm@emission@excode_formula@timepoints_per_unit
     )),
     nrow = hmm@nStates, ncol = hmm@nStates
   )
-  
+
   # Calculate stationary state distribution
   n <- ncol(transMat_init)
   A <- t(transMat_init - diag(n))
@@ -27,7 +26,7 @@ fitUnsupervised <- function(hmm, modelData, transMat_init, maxIter, verbose, tim
   prior_weights <- round(transMat_init * base_weight * stationary_state + 1)
   hmm@prior_weights <- prior_weights
   initProb <- hmm@initial_prob
-  hmm@transitions <- matrix(1/hmm@nStates, nrow = hmm@nStates, ncol = hmm@nStates)
+  hmm@transitions <- matrix(1 / hmm@nStates, nrow = hmm@nStates, ncol = hmm@nStates)
   emission_prob <- calcEmissionProb(hmm@emission@distribution, model)
   hmm_expectation <- forwardBackward(hmm, model, emission_prob)
 

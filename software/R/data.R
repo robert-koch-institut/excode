@@ -6,7 +6,6 @@
 #' \describe{
 #'   \item{date}{Week of death}
 #'   \item{observed}{Number of deaths}
-#'   \item{id}{Name of time series}
 #'   \item{timepoint}{A numeric column counting sequential weeks from 0 to total number of weeks, representing time progression for time-trend modeling}
 #'   \item{sin52}{Computed sinus component used for harmonic modeling}
 #'   \item{cos52}{Computed cosine component used for harmonic modeling}
@@ -24,7 +23,6 @@
 #' \describe{
 #'   \item{date}{Day of data collection}
 #'   \item{observed}{Number of cases}
-#'   \item{id}{Name of time series}
 #' }
 "sarscov2_df"
 
@@ -37,19 +35,5 @@
 #' \describe{
 #'   \item{date}{Week of death}
 #'   \item{observed}{Number of cases}
-#'   \item{id}{Name of time series}
 #' }
 "shadar_df"
-
-#' Salmonella Newport cases in Germany 2004-2014
-#'
-#' A dataset containing the weekly number of reported Salmonella Newport cases from January 2004 to February 2014 in Germany. The variables are as follows:
-#'
-#'
-#' @format A data.frame with 528 rows and 3 variables:
-#' \describe{
-#'   \item{date}{Week of death}
-#'   \item{observed}{Number of cases}
-#'   \item{id}{Name of time series}
-#' }
-"snewport_df"

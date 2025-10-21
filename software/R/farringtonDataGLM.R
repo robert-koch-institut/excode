@@ -8,7 +8,6 @@ algo.farrington.data.glm <- function(dayToConsider, b, freq,
                                      observed, population,
                                      verbose, pastWeeksNotIncluded, k) {
   # Identify reference time points
-
   # Same date but with one year, two year, etc, lag
   # b+1 because we need to have the current week in the vector
   referenceTimePoints <- algo.farrington.referencetimepoints(dayToConsider,
@@ -17,7 +16,6 @@ algo.farrington.data.glm <- function(dayToConsider, b, freq,
     epochAsDate = epochAsDate,
     epochStr = epochStr
   )
-
   if (!all(referenceTimePoints %in% vectorOfDates)) {
     ## previously only checked min(referenceTimePoints)
     stop(
@@ -155,7 +153,6 @@ blocks <- function(referenceTimePoints, vectorOfDates, freq, dayToConsider, b, w
   } else {
     now <- which(vectorOfDates == as.Date(dayToConsider))
   }
-
 
 
   vectorOfFactors[(now - w):now] <- p

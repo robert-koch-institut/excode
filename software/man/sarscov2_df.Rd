@@ -9,7 +9,6 @@ A data.frame with 154 rows and 3 variables:
 \describe{
   \item{date}{Day of data collection}
   \item{observed}{Number of cases}
-  \item{id}{Name of time series}
 }
 }
 \usage{

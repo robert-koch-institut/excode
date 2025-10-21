@@ -5,11 +5,6 @@ setMethod("createFormula",
   function(distribution, excode_formula) {
     params <- c("1", ifelse(excode_formula@timeTrend, "timepoint", ""), "seasgroups")
 
-    # Add shared model specification and collapse
-    if (!excode_formula@shared_params) {
-      params[params == "1"] <- "id"
-      params[params != "id"] <- paste(params[params != "id"], "*id", sep = "")
-    }
     params[length(params) + 1] <- "offset(log(population))"
     params <- paste(params, collapse = " + ")
 
@@ -31,18 +26,12 @@ setMethod("createFormula",
     }
     params <- c("1", timepoint, season)
 
-    # Add shared model specification and collapse
-    if (!excode_formula@shared_params) {
-      params[params == "1"] <- "id"
-      params[params != "id"] <- paste(params[params != "id"], "*id", sep = "")
-    }
     params[length(params) + 1] <- "offset(log(population))"
     params <- paste(params, collapse = " + ")
 
     paste0("response ~ ", params)
   }
 )
-
 
 
 setMethod("createFormula",
@@ -54,11 +43,6 @@ setMethod("createFormula",
     }
     params <- c("1", timepoint)
 
-    # Add shared model specification and collapse
-    if (!excode_formula@shared_params) {
-      params[params == "1"] <- "id"
-      params[params != "id"] <- paste(params[params != "id"], "*id", sep = "")
-    }
     params[length(params) + 1] <- "offset(log(population))"
     params <- paste(params, collapse = " + ")
 
@@ -71,11 +55,6 @@ setMethod("createFormula",
   function(distribution, excode_formula) {
     params <- c("1", names(excode_formula@data))
 
-    # Add shared model specification and collapse
-    if (!excode_formula@shared_params) {
-      params[params == "1"] <- "id"
-      params[params != "id"] <- paste(params[params != "id"], "*id", sep = "")
-    }
     params[length(params) + 1] <- "offset(log(population))"
     params <- paste(params, collapse = " + ")
 

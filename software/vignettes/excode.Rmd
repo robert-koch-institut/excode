@@ -27,15 +27,15 @@ library(tidyr)
 
 # Introduction 
 
-**Ex**cess **c**ount **de**tection (*excode*) in epidemiological time series is an important part of public health surveillance systems. A variety of algorithms has been developed to identify events such as disease outbreaks or excess mortality. To this end, time series are analysed to detect unusually large (case) counts, that exceed what is normally expected in a certain time period and geographical region. The normal expectancy of cases in a current time period is usually calculated based on historic data. The *excode* package provides a flexible framework that implements well established approaches to control for seasonality, long-term trends and historic events, but also allows the use of customized models. The user can choose between the Poisson and the Negative Binomial distribution, which are the most commonly used probability distributions for modeling count data. By combining hidden Markov models and generalized linear models, *excode* explicitly models normally expected case counts *and* expected excess case counts, i.e. each time point in a time series is labeled either as a normal state or as an excess state. For a detailed overview over excess count detection and other available methods, we recommend the  [surveillance](https://cran.r-project.org/web/packages/surveillance/index.html) package.
+**Ex**cess **c**ount **de**tection (*excode*) in epidemiological time series is an important part of public health surveillance systems. A variety of algorithms has been developed to identify events such as disease outbreaks or excess mortality. To this end, time series are analysed to detect unusually large (case) counts, that exceed what is normally expected in a certain time period and geographical region. The normal expectancy of cases in a current time period is usually calculated based on historic data. The *excode* package provides a flexible framework that implements and extends well established approaches to control for seasonality, long-term trends and historic events, but also allows the use of customized models. The user can choose between the Poisson and the Negative Binomial distribution, which are the most commonly used probability distributions for modeling count data. By combining hidden Markov models and generalized linear models, *excode* explicitly models normally expected case counts *and* expected excess case counts, i.e. each time point in a time series is labeled either as a normal state or as an excess state. For a detailed overview over excess count detection and other available methods, we recommend the  [surveillance](https://cran.r-project.org/web/packages/surveillance/index.html) package.
 
 ## Seasonal patterns 
-Many epidemiological times series that are of public health interest show periodic changes in cases depending on seasons or other calendar periods. Seasonal patterns can be modeled in **excode** as follows:
+Many epidemiological times series that are of public health interest show periodic changes in cases depending on seasons or other calendar periods. Seasonal patterns can be modeled in *excode* as follows:
 
 * **Mean:** This model does not account for seasonal or cyclical patterns. The expectancy of normal and excess case counts is modeled as the mean of the historic data.
 * **FarringtonNoufaily:** This is a popular algorithm, which models seasonality by segmenting a year into a predefined number of shorter time periods, where each has a different expectancy of observed cases. 
-* **Harmonic:** The 'Harmonic' model uses sine and cosine function to account for seasonal or cyclical patterns in the data. 
-* **Custom:** The 'Custom' model allows the user define their own model by providing a data frame containing covariate data.
+* **Harmonic:** The 'Harmonic' model uses sine and cosine functions to account for seasonal or cyclical patterns in the data. 
+* **Custom:** The 'Custom' model allows the user define their own model by providing a `data.frame` containing covariate data.
 
 
 ## Long-term time trends
@@ -49,7 +49,7 @@ The time series may show a long-term increase or decrease in case counts. The fo
 
 ## Historic events
 
-Events such as disease outbreaks may have caused an excess of case counts in historic data that is used for model estimation. This needs to be considered to avoid overestimation of the normal expectancy for the current time period. This is addressed in **excode** by explicitly modeling excess case counts using one or more 'excess states'. 
+Events such as disease outbreaks may have caused an excess of case counts in historic data that is used for model estimation. This needs to be considered to avoid overestimation of the normal expectancy for the current time period. This is addressed in *excode* by explicitly modeling excess case counts using one or more 'excess states'. 
 
 
 # Using *excode* for excess count detection
@@ -66,9 +66,9 @@ The input data is a `data.frame` with at least two variables containing dates an
 Optional variables are: 
 
 * **offset**: This could be e.g. the susceptible population.
-* **state**: This can used to indicate time points where there is no excess and can be either `0=normal` or `NA=unknown`. 
+* **state**: A numeric vector that labels time points that are known to be in the 'normal' state, which is set to `0=normal` or `NA=unknown`. 
 
-The example data - `shadar_df` - used in this section contains the number of weekly cases of *Salmonella hadar* from 2001 until 2006 in Germany (taken from the [surveillance package](https://cran.r-project.org/web/packages/surveillance/index.html)).
+`shadar_df` contains the number of weekly cases of *Salmonella hadar* from 2001 until 2006 in Germany (taken from the [surveillance package](https://cran.r-project.org/web/packages/surveillance/index.html)).
 
 ```{r sts object}
 ## Load data and show first 6 rows
@@ -78,7 +78,7 @@ kable(as_tibble(shadar_df[1:6, ])) %>%
 ```
 
 
-In this example, the 'Poisson' distribution with two states, the 'Harmonic' model and a 'Linear' time trend is chosen. Excess count detection is carried using the `run_excode()` function. If time points with excess are expected to be rare (e.g. for disease outbreak detection) it is recommended to set `set_baseline_state = TRUE`. This assigns low case counts to the `normal` state after initialization and improves model fitting. The model is estimated with `run_exoce()` on multiple time points: 209 - 295.
+*excode* is applied to this data using the 'Poisson' distribution with two states, the 'Harmonic' model and a 'Linear' time trend. Excess count detection is carried using the `run_excode()` function. If time points with excess are expected to be rare (e.g. for disease outbreak detection) it is recommended to set `set_baseline_state = TRUE`. This assigns low case counts to the 'normal' state after initialization and improves model fitting. The model is estimated with `run_excode()` on multiple time points: 209 - 295.
 
 
 ```{r run_harmonic_model, message=FALSE, warning=FALSE}
@@ -103,23 +103,22 @@ kable(as_tibble(summary_shadar_har[82:87, ])) %>%
 
 The result is a `data.frame` with the following variables:
 
-* **posterior0:** Probability for the `normal` state the current time point. 
-* **posterior1:** Probability that there is an `excess` of case counts at the current time point. 
+* **posterior0:** Probability of the 'normal' state . 
+* **posterior1:** Probability of the 'excess' state. 
 * **pval:** P-value for the null hypothesis that there is no excess at the current timepoint.
-* **zscore:** Measures how many standard deviations the observed number of cases is from the mu0. A value of `2.33` corresponds to a p-value of `0.01`.
+* **zscore:** Measures how many standard deviations the observed number of cases is from the mu0. A value of 2.33 corresponds to a p-value of 0.01.
 * **date:** The event date (e.g. reporting date or date of disease onset).
 * **timepoint:** Timepoint (as integer) in the time series.
-* **observed:** Number of cases at the current time point.
-* **mu0:** Number of expected cases under normal conditions.
-* **mu1:** Number of expected cases under excess conditions.
-* **id:** Name of the time series.
+* **observed:** Number of cases.
+* **mu0:** Number of expected cases in the 'normal' state.
+* **mu1:** Number of expected cases in the 'excess' state.
 * **BIC:** Bayesian information criterion.
 * **AIC:** Aikake information criterion.
 
-If the model has more than two states, there will be more columns showing the respective `posterior` an `mu` values. The result summary can visualised using the `plot_excode_summary()` function. Figure 1 shows that there is a cyclical pattern of case counts, with more cases during the summer and fewer cases cases during the winter. There is also a decrease of reported cases over the years, except  for the year 2006,  [where an outbreak lead to a surge in case numbers compared to previous years](https://www.rki.de/DE/Content/Infekt/EpidBull/Archiv/2006/Ausgabenlinks/31_06.pdf?__blob=publicationFile). 
+If the model has more than two states, there will be more columns showing the respective `posterior` an `mu` values. The result summary can visualised using the `plot_excode_summary()` function. Figure 1 shows that there is a cyclical pattern of case counts, with more cases during the summer and fewer cases cases during the winter. [An outbreak lead to a surge in case numbers in 2006 compared to previous years](https://www.rki.de/DE/Content/Infekt/EpidBull/Archiv/2006/Ausgabenlinks/31_06.pdf?__blob=publicationFile). 
 
 
-```{r, fig.width=7, fig.height=6, fig.align="center", message=FALSE, warning=FALSE, fig.cap = "**Figure 1:** Weekly *Salmonella Hadar* cases with alarm thresholds (upper bounds)."}
+```{r, fig.width=7, fig.height=6, fig.align="center", message=FALSE, warning=FALSE, fig.cap = "**Figure 1:** Weekly *Salmonella Hadar* cases with fitted 'normal' (mu0) and 'excess' (mu1) state means. Bottom panels show posterior probability of excess case counts, z-scores and -log10(p-value) and the detected excess case counts for the three measures at selected cutoffs."}
 # Add historic data
 shadar_plot <- shadar_df %>% 
   dplyr::filter(!date %in% summary_shadar_har$date & 
@@ -135,7 +134,7 @@ Models 'Mean' and 'FarringtonNoufaily' can be applied likewise.
 
 # The 'Custom' model
 
-The 'Custom' model can be used to fit a model with covariate data selected by the user. To give an example, data of [SARS-CoV-2 infections in Berlin-Neukölln (Germany)](https://robert-koch-institut.github.io/SARS-CoV-2-Infektionen_in_Deutschland/) from March-July 2020 will be used (downloaded on 2024-10-31). Figure 4 shows that after an inital peak of infections in late March/early April, the number of infections dropped, showing only few cases in May, followed by a rise in June which could be attributed to several [local outbreaks](https://www.berlin.de/ba-neukoelln/aktuelles/pressemitteilungen/2020/pressemitteilung.950143.php). The daily number of reported SARS-CoV-2 differs over the course of a week, showing higher number of cases reported during weekdays and lower number of cases during weekends. In the following a 'Custom' model is used, that models the mean number of reported cases during the past 8 weeks on workdays and weekends, to detect the observed local outbreaks. To define the necessary covariate data for the model, a `data.frame` - `weekday` - is created, indicating whether a current day is a workday or weekend: 
+The 'Custom' model can be used to fit a model with covariate data selected by the user. To give an example, [daily reported SARS-CoV-2 infections in Berlin-Neukölln (Germany)](https://robert-koch-institut.github.io/SARS-CoV-2-Infektionen_in_Deutschland/) from March-July 2020 will be used (downloaded on 2024-10-31). Figure 2 shows that after an initial peak of infections in late March/early April 2020, the number of infections dropped, showing only few cases in May, followed by a rise in June which could be attributed to several [local outbreaks](https://www.berlin.de/ba-neukoelln/aktuelles/pressemitteilungen/2020/pressemitteilung.950143.php). The daily number of reported SARS-CoV-2 differs over the course of a week, showing higher number of cases reported during weekdays and lower number of cases during weekends. The model controls for these differences between weekdays and weekends. To define the necessary covariate data for the model, a `data.frame` - `weekday` - is created, indicating whether a current day is a workday or weekend: 
 
 ```{r, fig.width=6, fig.height=4}
 data(sarscov2_df)
@@ -145,7 +144,7 @@ weekday <- data.frame(day = factor(ifelse(num_wday <= 5, "workday", "weekend"),
 ))
 ```
 
-This is then used with the `run_excode()` function. Note that `timepoints_per_unit = 7` indicates that the repeating time periods are weeks (by default this is 52, i.e. yearly periodic data). Thehe models are fitted on time points 93- 154 using 8 weeks of historic data (`time_units_back = 8`).
+This is then used with the `run_excode()` function. Note that `timepoints_per_unit = 7` indicates that the repeating time periods are weeks (by default this is 52, i.e. yearly periodic data). The models are fitted on time points 93-154 using 8 weeks of historic data (`time_units_back = 8`).
 
 ```{r, message=FALSE, warning=FALSE}
 
@@ -168,7 +167,7 @@ summary_sarscov2_custom <- summary(result_sarscov2_custom)
 
 The results can be plotted as follows:
 
-```{r, warning=FALSE, message=FALSE, fig.width=7, fig.height=6, fig.align="center", fig.align="center", message=FALSE, warning=FALSE, fig.cap = "**Figure 2:** Daily reported SARS-CoV-2 infections in Berlin-Neukölln with alarm thresholds (upper bounds)."}
+```{r, warning=FALSE, message=FALSE, fig.width=7, fig.height=6, fig.align="center", fig.align="center", message=FALSE, warning=FALSE, fig.cap = "**Figure 2:** Daily reported SARS-CoV-2 infections in Berlin-Neukölln with fitted 'normal' (mu0) and 'excess' (mu1) state means. Bottom panels show posterior probability of excess case counts, z-scores and -log10(p-value) and the detected excess case counts for the three measures at selected cutoffs."}
 
 sarscov2_plot <- sarscov2_df %>% 
   dplyr::filter(!date %in%summary_sarscov2_custom$date) %>% 
@@ -179,15 +178,15 @@ plot_excode_summary(sarscov2_plot, type="bar")
 
 
 
-# Model fitting with multiple and known `normal` states
+# Model fitting with multiple and known 'normal' states
 
-The 'MultiState' model allows multiple states, which can be necessary if the use of only one excess state is not sufficient to model the data. This can be the case when the range of excess counts is very large. To illustrate application of the 'MultiState' model, weekly all-cause mortality data reported to the [German Federal Statistical Office](https://www.destatis.de/DE/Themen/Gesellschaft-Umwelt/Bevoelkerung/Sterbefaelle-Lebenserwartung/sterbefallzahlen.html) is used (Figure 5). The 'MultiState' model with four states is applied to detect weeks with excess mortality in the time series.
+In this section, weekly all-cause mortality data reported to the [German Federal Statistical Office](https://www.destatis.de/DE/Themen/Gesellschaft-Umwelt/Bevoelkerung/Sterbefaelle-Lebenserwartung/sterbefallzahlen.html) is used to illustrate the use of multiple states which can be necessary if the range of excess counts is very large.  (Figure 3). 
 
 ```{r data_mort_df_germany, fig.width=6, fig.height=3, fig.align="center", fig.align="center", fig.align="center", message=FALSE, warning=FALSE, fig.cap = "**Figure 5:** Weekly all-cause mortaility in Germany."}
 data("mort_df_germany")
 ```
 
-For models with only two states, *excode* automatically initializes and fits the model. However, when using multiple states, initialization of the GLM part of the model needs to be done manually. In order to do so, initial estimates for the expected number of cases for each state need to be provided. First the baseline number of deaths is estimated, which roughly follows the [EuroMOMO](https://www.euromomo.eu/graphs-and-maps) protocol. The baseline fit uses sine and cosine functions to control for seasonality as well as a linear time trend. To avoid overestimation of the expected background mortality, only weeks 15 to 26 (spring) and 36 to 45 (autumn) are included to estimate the background model, since these are time periods where no excess mortality is expected. All necessary variables are stored in `mort_df_germany`:
+Initialisation and fitting is based on the  [EuroMOMO](https://www.euromomo.eu/graphs-and-maps) protocol for excess mortality estimation. The EuroMOMO approach fits the baseline mortailty on data from weeks 15 to 26 (spring) and 36 to 45 (autumn), since these are time periods where no excess mortality is expected. To incorporate this into  *excode*, we set `state=0` for the respective time points:
 
 
 ```{r mort_df_germany, fig.width=6, fig.height=4, fig.align="center"}
@@ -195,17 +194,12 @@ kable(as_tibble(mort_df_germany[15:20, ])) %>%
   kable_styling(font_size = 11)
 ```
 
-
-
-*excode* models the mean of the excess states as multiplicative increase compared to the mean of the normal/background state. Initial estimates for the mean of each excess state are chosen as the 75%-, 85%-, and 95%-quantile of the relative increase of the observed number of deaths compared to the estimated baseline, which corresponds to a 6%, 10% and 21% increase:
-
-The 'MultiState' model can now be fitted using `run_excode()` as usual:
+This helps to properly identfiy and fit the baseline mortality along with the two excess states. Next, we use `run_excode()` to fit the model on the last time point. Note that we leave `set_baseline_state = FALSE` at its default value, since excess mortality is not considered to be a rare event such as disease outbreaks in the previous examples. The model is estimated using 'Harmonic' functions to control for seasonal patterns and a natural cubic spline with two knots ('Spline2') to control for long term trends. Because of the wide range an likely overdispersion of the data, a negative binomial distribution ('NegBinom') is used:
 
 ```{r multistate_fit, fig.width=7, fig.height=5, fig.align="center"}
 
 result_mort <- run_excode(
     surv_ts = mort_df_germany,
-    covariate_df = weekday,
     states = 3,
     distribution = "NegBinom",
     periodic_model = "Harmonic",
@@ -218,9 +212,9 @@ summary_mort <- summary(result_mort)
 
 ```
 
-The results and weekly excess probablities can be plottad as follows:
+The results and weekly excess probabilities can be plotted as follows. Note that, here the full model fit is plotted, since `run_excode()` was only applied to the last time point.
 
-```{r multistate_plot, fig.width=7, fig.height=6, fig.align="center", fig.align="center", message=FALSE, warning=FALSE, fig.cap = "**Figure 6:** *Top*: Weekly all-cause mortaility in Germany and expected mortality of the normal and three excess states are shown. Weeks with excess probabilty>0.5 are shown in blue. *Bottom*: Weekly excess probability."}
+```{r multistate_plot, fig.width=7, fig.height=6, fig.align="center", fig.align="center", message=FALSE, warning=FALSE, fig.cap = "**Figure 6:** Weekly all-cause mortaility in Germany  with fitted 'normal' (mu0) and 'excess' (mu1, mu2) state means. Bottom panels show posterior probability of excess case counts, z-scores and -log10(p-value) and the detected excess case counts for the three measures at selected cutoffs."}
 
 plot_excode_summary(summary_mort)
 
@@ -229,14 +223,14 @@ plot_excode_summary(summary_mort)
 
 # A short overview of the statistical model
 
-The *excode* package combines Generalized Linear Models (GLMs) with Hidden Markov Models (HMMs). The GLM part of the model allows to use  regression models to  model seasonal patterns and general trends in the time series. Besides seasonal patterns and general time trends, an algorithm for excess count detection needs to account for excess counts in the historic data used for model estimation. The HMM part of the statistical model used in *excode* allows to explicitly consider past disease outbreaks in the model. The HMM separates the time series in two (or more) states: the normal state and one (or multiple) excess state. In the normal state, observed case counts lie within the range of what is normally expected in a certain time period. In the excess state, case counts are higher than what is normally expected, i.e. there is a potential outbreak or excess mortality. This is in contrast most of other algorithms used for excess count detection, which either do not account for previous excess case counts or use some heuristic for down weighting past instances of excess counts. 
+The *excode* package combines Generalized Linear Models (GLMs) with Hidden Markov Models (HMMs). The GLM part of the model allows to use  regression models to  model seasonal patterns and general trends in the time series. Additionally, an algorithm for excess count detection needs to account for excess counts in the historic data used for model estimation. The HMM part of the statistical model used in *excode* allows to explicitly consider past disease outbreaks in the model. The HMM separates the time series in two (or more) states: the normal state and one (or multiple) excess state. In the normal state, observed case counts lie within the range of what is normally expected in a certain time period. In the excess state, case counts are higher than what is normally expected, i.e. there is a potential outbreak or excess mortality. This is in contrast most of other algorithms used for excess count detection, which either do not account for previous excess case counts or use some heuristic for down-weighting past instances of excess counts. 
 
-For simplicity, we consider a two state model with `normal` state $N$ and `excess` state $E$. Each position $t$ in the time series of length $T$ is in a state $s_t \in \left\{ N,E\right\}, t\in \left[1;T\right]$ , where $N$ represents the normal and $E$ the excess state. The sequence of normal and excess states is modeled by the HMM using initial state and transition probabilities (left boxes in Figure 7):
+For simplicity, we consider a two state model with 'normal' state $N$ and 'excess' state $E$. Each position $t$ in the time series of length $T$ is in a state $s_t \in \left\{ N,E\right\}, t\in \left[1;T\right]$ , where $N$ represents the normal and $E$ the excess state. The sequence of normal and excess states is modeled by the HMM using initial state and transition probabilities:
 
 * Initial state probabilities $\Pr(s_{1}=N\bigr)$ and $\Pr(s_{1}=E\bigr)$ give the probability that the first time point of the time series is in the respective state.
 * Transition probabilities give the probability that time point $t$ is in a specific state, given the state of the previous time point. For instance, $\Pr\left(s_{t}=N\left|s_{t-1}=N\right.\right)$, $t\in\left[1;T\right]$ gives the probability that the time series is in the normal state at time point $t$, given that position $t-1$ is also in the normal state. $\Pr\left(s_{t}=E\left|s_{t-1}=N\right.\right)$ gives the probability to transition to the excess state at time point $t$, given that $t-1$ is in the normal state.
 
-The expected case counts at position $t$, $\mu_t$ are modeled using a GLM using sine and cosine functions to control for seasonal patterns (which is one of the models available in *excode*):
+The expected case counts at position $t$, $\mu_t$, can be modeled using a GLM with sine and cosine functions to control for seasonal patterns (which is one of the models available in *excode*):
 
 $$
 \log\mu_{t}=\beta_{0}+\beta_{1}t+ \beta_3 \cos(\frac{2\pi}{52}t) + \beta_4\sin(\frac{2\pi}{52}t) + 
@@ -245,9 +239,7 @@ $$
 
 Here, $\beta_{0}$ is the intercept, $\beta_{1}t$ a linear time trend, $\beta_3$ and $\beta_4$ model the seasonal patterns using $\sin$ and $\cos$ functions with weekly data (52 time points per year). The increase in cases is incorporated by  $\beta_{5}$. 
 
-Based on this model, *excode* calculates a probability that there is an excess of case counts at the current time point - the posterior probability. Moreover, given the normally expected case counts in the model, a p-value for the null hypothesis, that there is no excess at the current timepoint is calculated. The z-score is calculated based on a quasi-Poisson regression as described in   [EuroMOMO](https://www.destatis.de/DE/Themen/Gesellschaft-Umwelt/Bevoelkerung/Sterbefaelle-Lebenserwartung/sterbefallzahlen.html).
-
-
+Based on this model, *excode* calculates a probability that there is an excess of case counts at the current time point - the posterior probability. Moreover, given the normally expected case counts in the model, a p-value for the null hypothesis, that there is no excess at the current timepoint is calculated. The z-score is calculated based on a quasi-Poisson regression similar to [EuroMOMO](https://www.destatis.de/DE/Themen/Gesellschaft-Umwelt/Bevoelkerung/Sterbefaelle-Lebenserwartung/sterbefallzahlen.html).
 
 
 

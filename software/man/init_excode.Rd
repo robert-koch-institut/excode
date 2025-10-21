@@ -21,128 +21,41 @@ init_excode(
 )
 }
 \arguments{
-\item{surv_ts}{A data frame (or \code{sts}-like table) of surveillance counts
-containing the response and any covariates required by the EXCODE formula.
-If an \code{offset} column is present, it is passed to
-\code{excodeFormula(..., offset = TRUE)} for the multi-state model.}
+\item{surv_ts}{data.frame of surveillance counts (response and any covariates required by the EXCODE formula); if an `offset` column is present it is used when building the MultiState formula.}
 
-\item{timepoint}{Integer index (or time index coercible to integer) denoting
-the right end of the training window passed to \code{extractModelData()}.}
+\item{timepoint}{Integer index indicating the right end of the training window passed to `extractModelData()`.}
 
-\item{time_units_back}{Positive integer giving how many past time units
-(relative to \code{timepoint}) to include for initialization.}
+\item{time_units_back}{Positive integer giving how many past time units (relative to `timepoint`) to include for initialization.}
 
-\item{distribution}{Character scalar passed to \code{excodeFamily()} defining
-the emission distribution (e.g., \code{"poisson"}, \code{"quasipoisson"},
-\code{"nbinom"}). For negative binomial, the size is inferred from the
-baseline fit.}
+\item{distribution}{Character scalar passed to `excodeFamily()` defining the emission distribution, e.g., `"Poisson"` or `"NegBinom"` (NB size inferred from the baseline fit).}
 
-\item{states}{Integer (\eqn{\ge} 2). Number of latent states in the
-multi-state emission; state \code{0} is treated as the background.}
+\item{states}{Integer (>= 2) number of latent states; state `0` is treated as background.}
 
-\item{time_trend}{Character specifying the time-trend setting forwarded to
-\code{excodeFormula(name = periodic_model, time_trend = ...)}. Must be one
-of \code{c("Linear", "Spline1", "Spline2", "None")}. Default behavior
-follows \code{excodeFormula()}'s default if unspecified.}
+\item{time_trend}{Character time-trend setting forwarded to `excodeFormula(name = periodic_model, time_trend = ...)`, one of `c("Linear","Spline1","Spline2","Spline3","Spline4","None")`; default `"None"`.}
 
-\item{periodic_model}{Character giving the model \emph{name} used by
-\code{excodeFormula}. Must be one of
-\code{c("Mean", "FarringtonNoufaily", "Harmonic", "Custom")}.
-(The \code{"MultiState"} name is constructed internally for the emission.)}
+\item{periodic_model}{Character model name for the background formula, one of `c("Mean","FarringtonNoufaily","Harmonic","Custom")`.}
 
-\item{period_length}{Integer, default \code{52}. Mapped to
-\code{timepoints_per_unit} in \code{excodeFormula} to indicate the number
-of time points per “seasonal year” (e.g., \code{52} for weekly data with
-annual cycles, \code{7} for daily data with weekly cycles, \code{365} for
-daily data with annual cycles).}
+\item{period_length}{Integer mapped to `timepoints_per_unit` in `excodeFormula` (e.g., `52` weekly points per year, `7` daily with weekly cycle, `365` daily with annual cycle); default 52.}
 
-\item{intercept}{Logical, default \code{TRUE}. Forwarded to
-\code{excodeFormula(name = "MultiState", intercept = ...)}; only relevant
-for the \code{"MultiState"} construction per \code{excodeFormula}'s API.}
+\item{intercept}{Logical forwarded to `excodeFormula(name = "MultiState", intercept = ...)`; default `TRUE`.}
 
-\item{weights_threshold}{Numeric, default \code{2.58}. Threshold (in SD units)
-used by \code{surveillance::algo.farrington.assign.weights()} to down-weight
-large residuals when refitting the baseline GLM.}
+\item{covariate_df}{data.frame or `NULL`; optional covariates used when constructing `excodeFormula()`; defaults to `NULL`.}
 
-\item{weights_threshold_baseline}{Numeric, default \code{1}. Anscombe residual
-threshold for identifying time points that are **not** baseline; those
-residuals are clustered to seed the \code{states - 1} non-baseline states.}
+\item{weights_threshold}{Numeric SD cutoff used by `surveillance::algo.farrington.assign.weights()` to down-weight large residuals in the baseline refit; default `2.58`.}
 
-\item{init_baseline_state}{Logical, default \code{TRUE}. Reserved for future
-use; if \code{TRUE}, intends to allow forcing background state assignment
-during initialization (currently not active in the code path).}
+\item{weights_threshold_baseline}{Numeric Anscombe residual threshold for identifying non-baseline time points that are clustered to seed the `states - 1` non-baseline states; default `1`.}
+
+\item{set_baseline_state}{Logical; if `TRUE`, computes/assigns the background state after initialization; default `FALSE`.}
 }
 \value{
-An \code{excodeModel} object whose emission is configured as
-\code{excodeFormula("MultiState", ...)} with:
-\itemize{
-  \item \code{nStates = states}
-  \item \code{initial_mu}: \eqn{T \times states} matrix of state-specific
-        expected counts for the initialization window
-  \item (for NB) an estimated \code{nb_size} seeded from the baseline fit
-}
+An `excodeModel` whose emission is a `MultiState` formula with `nStates = states`, initialized transition matrix and `initial_mu` (and NB size when applicable).
 }
 \description{
-Builds an initial **EXCODE** multi-state model by:
-(1) deriving a baseline GLM from the background component of the EXCODE formula,
-(2) computing Anscombe residuals and down-weighting outliers (Farrington-style),
-(3) partitioning non-baseline residuals into \code{states - 1} clusters to seed
-latent states, and
-(4) estimating state-specific mean trajectories used as \code{initial_mu}.
-
-Internally, this calls \code{\link{excodeFormula}} twice: first to obtain the
-background formula implied by \code{periodic_model} (via its \emph{name}),
-and then to construct a \code{"MultiState"} emission used for initialization.
+Builds an initial multi-state EXCODE model by fitting a baseline GLM to the background component, computing Anscombe residuals with Farrington-style down-weighting, clustering non-baseline residuals into `states - 1` groups to seed latent states, and estimating state-specific mean trajectories for `initial_mu`.
 }
 \details{
-The function first constructs an EXCODE family and background formula via
-\code{excodeFamily()} and \code{excodeFormula(name = periodic_model, ...)},
-and extracts a modeling window with \code{extractModelData()}. A quasi-Poisson
-GLM is fit to the background, Anscombe residuals are computed, and outliers are
-down-weighted using the Farrington approach. Residuals exceeding
-\code{weights_threshold_baseline} are clustered with \code{kmeans()} into
-\code{states - 1} groups to initialize non-baseline state labels. A GLM with
-a \code{state} factor then yields state-specific means used to populate
-\code{initial_mu}. If the target distribution is negative binomial, a size
-parameter is initialized from the baseline mean/over-dispersion.
-
-Advanced \code{excodeFormula} options such as \code{S} (harmonics),
-\code{noPeriods}/\code{w} (Farrington-Noufaily binning), and spline
-\code{df_*} are not directly parameterized here; the defaults from
-\code{excodeFormula()} are used.
-}
-\section{Notes}{
-
-\itemize{
-  \item This is an initialization helper; it does **not** perform full training.
-  \item Warnings from intermediate GLM fits are suppressed by design.
-  \item The function assumes that \code{excodeFamily()}, \code{excodeFormula()},
-        \code{excodeModel()}, and \code{extractModelData()} are available in
-        the calling environment (e.g., your EXCODE package/namespace).
-}
-}
-
-\examples{
-\dontrun{
-# surv_ts must provide the columns referenced by the EXCODE formula.
-mod <- init_excode(
-  surv_ts   = my_surveillance_df,
-  timepoint = nrow(my_surveillance_df),
-  time_units_back = 156,           # ~3 years of weekly data
-  distribution = "nbinom",
-  states = 3,
-  time_trend = "Linear",
-  periodic_model = "Harmonic",
-  period_length = 52,
-  intercept = TRUE
-)
-}
-
+Internally constructs a background `excodeFormula(name = periodic_model, ...)`, fits a quasi-Poisson GLM with Farrington-style weights, clusters residuals above `weights_threshold_baseline` via `kmeans()` to initialize non-background states, then fits a GLM with a `state` factor to obtain `initial_mu`; if `distribution = "NegBinom"`, the NB size is initialized from the baseline fit.
 }
 \seealso{
-\code{\link{excodeFormula}},
-\code{\link{excodeFamily}},
-\code{\link{excodeModel}},
-\code{surveillance::anscombe.residuals},
-\code{surveillance::algo.farrington.assign.weights}
+\code{\link{excodeFormula}}, \code{\link{excodeFamily}}, \code{\link{excodeModel}}, \code{surveillance::anscombe.residuals}, \code{surveillance::algo.farrington.assign.weights}
 }

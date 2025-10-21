@@ -12,10 +12,6 @@ setClass("excodeFamily",
 )
 
 
-
-
-
-
 #' This class is a generic container for a family of Poisson distributions
 #'
 #' @exportClass Poisson
@@ -36,19 +32,14 @@ setMethod(f = "show", signature = c("Poisson"), function(object) {
 })
 
 
-
-
-
 #' This class is a generic container for a family of Negative Binomial distributions
 #'
-#' @slot shared_nb_size Logical indicating whether nb_size parameter is shared across multiple time series during model estimation.
 #' @slot nb_size Size parameter of the Negative Binomial distribution. Only relevant if 'MultiState' model is used with a Negative Binomial dsitribution.
 #'
 #' @exportClass NegBinom
 setClass("NegBinom",
   contains = "excodeFamily",
   slots = c(
-    shared_nb_size = "logical",
     nb_size = "numeric"
   ),
   prototype = list(
@@ -66,27 +57,18 @@ setMethod(f = "show", signature = c("NegBinom"), function(object) {
 })
 
 
-
 #' @title Create a family of probability distributions for excess count detection.
 #'
 #' @param name Name of the probability distribution that should be used. Either "Poisson" or "NegBinom".
 #' @param nb_size Size parameter of the Negative Binomial distribution. Only relevant if 'MultiState' model is used with a Negative Binomial dsitribution.
-#' @param shared_nb_size Logical indicating whether nb_size parameter is shared across multiple time series. Only relevant if name is "NegBinom".
 #' @returns An \code{\linkS4class{excodeFamily}} object.
 #'
 #' @seealso \code{\linkS4class{excodeFamily}}
 #'
-#' @examples
-#'
-#' excode_family_pois <- excodeFamily("Poisson")
-#' excode_family_pois
-#'
 #' @export
 excodeFamily <- function(name,
-                         nb_size = NA,
-                         shared_nb_size = FALSE) {
+                         nb_size = NA) {
   name <- as.character(name)
-  shared_nb_size <- as.logical(shared_nb_size)
 
   obj <- NULL
 
@@ -96,7 +78,6 @@ excodeFamily <- function(name,
   if (name == "NegBinom") {
     obj <- new(name,
       name = name,
-      shared_nb_size = shared_nb_size,
       nb_size = as.numeric(nb_size)
     )
   }
@@ -120,33 +101,6 @@ setMethod("getParamNames",
   signature = c("excodeFamily"),
   function(distribution) {
     distribution@params
-  }
-)
-
-
-#' @title Returns variable indicating whether the size parameter of a Negative Binomial distribution is shared between multiple time series.
-#'
-#' @param distribution An excodeFamily object.
-#' @returns Logical indicating whether the size parameter of a Negative Binomial distribution is shared between multiple time series
-#'
-#' @seealso \code{\linkS4class{NegBinom}}, \code{\linkS4class{Poisson}}
-#'
-#' @keywords internal
-#' @noRd
-setGeneric("getSharedParN", function(distribution) standardGeneric("getSharedParN"))
-
-
-setMethod("getSharedParN",
-  signature = c("NegBinom"),
-  function(distribution) {
-    as.numeric(distribution@shared_nb_size)
-  }
-)
-
-setMethod("getSharedParN",
-  signature = c("Poisson"),
-  function(distribution) {
-    0
   }
 )
 
@@ -177,12 +131,6 @@ setMethod("summary_family",
 )
 
 
-
-
-
-
-
-
 #' @title Subsets size parameter of Negative Binomial distribution after model fitting to include the current timepoint only.
 #'
 #' @param excode_family An excodeFamily object.
@@ -208,7 +156,6 @@ setMethod("subset_nb_size",
     excode_family
   }
 )
-
 
 
 #' @title Merge two excodeFamily after model fitting.
@@ -240,9 +187,6 @@ setMethod("merge_excode_family_result",
     excode_family1
   }
 )
-
-
-
 
 
 #' @title Set the size parameter of a Negative Binomial distribution.

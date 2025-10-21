@@ -42,14 +42,6 @@ Creates an object of class \code{excodeModel} for modeling excess counts using
 a Hidden Markov Model (HMM) with user-defined emission distributions
 and formula for modeling observed counts.
 }
-\examples{
-# Initialisation of a mean model without timetrend with Poisson emission
-
-excode_formula_mean <- excodeFormula("Mean", timeTrend = FALSE)
-excode_family_pois <- excodeFamily("Poisson")
-excodeModel(excode_family_pois, excode_formula_mean)
-
-}
 \seealso{
 \code{\linkS4class{excodeModel}},
 \code{\linkS4class{excodeFamily}},

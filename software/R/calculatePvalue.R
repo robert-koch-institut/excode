@@ -7,7 +7,7 @@ setMethod("calculatePvalue",
     pnbinom(
       q = result@observed - 1,
       size = result@emission@distribution@nb_size,
-      mu = result@emission@mu0,
+      mu = result@emission@mu[, 1],
       lower.tail = FALSE
     )
   }
@@ -16,22 +16,22 @@ setMethod("calculatePvalue",
 setMethod("calculatePvalue",
   signature = c("Poisson", "excodeModel"),
   function(distribution, result) {
-    
-    
     pval <- ppois(
       q = result@observed - 1,
-      lambda = result@emission@mu0,
+      lambda = result@emission@mu[, 1],
       lower.tail = FALSE
     )
-    
+
     # size=mu/(phi-1)
     phi <- max(c(1, summary(result@emission@glm)$dispersion))
-    if (phi>1){
-      pval <- pnbinom(q = result@observed - 1,
-                      mu = result@emission@mu0,
-                      size = result@emission@mu0/(phi-1),
-                      lower.tail = FALSE)
+    if (phi > 1) {
+      pval <- pnbinom(
+        q = result@observed - 1,
+        mu = result@emission@mu[, 1],
+        size = result@emission@mu[, 1] / (phi - 1),
+        lower.tail = FALSE
+      )
     }
-    pval  
+    pval
   }
 )

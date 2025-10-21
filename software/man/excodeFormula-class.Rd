@@ -3,21 +3,23 @@
 \docType{class}
 \name{excodeFormula-class}
 \alias{excodeFormula-class}
-\title{This class is a generic container for a formula which specifies the model used for excess count detection.}
+\title{excodeFormula Class}
 \description{
-This class is a generic container for a formula which specifies the model used for excess count detection.
+A generic container for a formula specifying the model used for excess count detection.
 }
 \section{Slots}{
 
 \describe{
-\item{\code{name}}{Name of the model. Must be one of c("FarringtonNoufaily", "Harmonic", "Custom", "MultiState").}
+\item{\code{name}}{Character; name of the model, one of `c("FarringtonNoufaily","Harmonic","Custom","MultiState")`.}
 
-\item{\code{shared_params}}{Indicates whether model parameters are shared across multiple time series.}
+\item{\code{params}}{Character vector of parameter names included in the model formula.}
 
-\item{\code{intercept}}{TRUE if the model should include an intercept, FALSE otherwise.}
+\item{\code{intercept}}{Logical; `TRUE` if the model includes an intercept, `FALSE` otherwise.}
 
-\item{\code{coefficients}}{Coefficients of a fitted model.}
+\item{\code{coefficients}}{Numeric vector of fitted model coefficients.}
 
-\item{\code{failed_optim}}{TRUE if an error occured during model fitting.}
+\item{\code{failed_optim}}{Numeric indicator (0/1) showing whether an error occurred during model fitting.}
+
+\item{\code{time_trend}}{Character; type of time trend used in the model (e.g., `"Linear"`, `"Spline1"`, `"Spline2"`, `"None"`).}
 }}
 

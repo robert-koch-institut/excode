@@ -114,7 +114,9 @@ getGammaXsi <- function(hmm, modelData, emissionProb) {
 
 
 forwardBackward <- function(hmm, modelData, emissionProb) {
-  getGammaXsi(hmm,
-              modelData, 
-              emissionProb)
+  getGammaXsi(
+    hmm,
+    modelData,
+    emissionProb
+  )
 }
