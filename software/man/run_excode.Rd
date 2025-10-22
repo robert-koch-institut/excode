@@ -2,145 +2,83 @@
 % Please edit documentation in R/run_excode.R
 \name{run_excode}
 \alias{run_excode}
-\alias{run_excode,sts,excodeModel-method}
-\alias{run_excode,list,excodeModel-method}
-\alias{run_excode,data.frame,excodeModel-method}
-\title{Detect Excess Counts in Epidemiological Time Series}
+\title{Detect excess counts in epidemiological time series}
 \usage{
 run_excode(
   surv_ts,
-  excode_model,
-  timepoints,
-  learning_type = "unsupervised",
+  timepoints = NULL,
+  time_units_back = 5,
+  distribution,
+  states,
+  time_trend = "None",
+  periodic_model = "Harmonic",
+  period_length = 52,
+  intercept = TRUE,
+  covariate_df = NULL,
+  weights_threshold = 2.58,
+  weights_threshold_baseline = 1,
+  set_baseline_state = FALSE,
   maxIter = 100,
   verbose = FALSE,
-  return_full_model = FALSE,
-  past_timepoints_not_included = 26,
-  time_units_back = 5
-)
-
-\S4method{run_excode}{sts,excodeModel}(
-  surv_ts,
-  excode_model,
-  timepoints,
-  learning_type = "unsupervised",
-  maxIter = 100,
-  verbose = FALSE,
-  return_full_model = FALSE,
-  past_timepoints_not_included = 26,
-  time_units_back = 5
-)
-
-\S4method{run_excode}{list,excodeModel}(
-  surv_ts,
-  excode_model,
-  timepoints,
-  learning_type = "unsupervised",
-  maxIter = 100,
-  verbose = FALSE,
-  return_full_model = FALSE,
-  past_timepoints_not_included = 26,
-  time_units_back = 5
-)
-
-\S4method{run_excode}{data.frame,excodeModel}(
-  surv_ts,
-  excode_model,
-  timepoints,
-  learning_type = "unsupervised",
-  maxIter = 100,
-  verbose = FALSE,
-  return_full_model = FALSE,
-  past_timepoints_not_included = 26,
-  time_units_back = 5
+  return_full_model = FALSE
 )
 }
 \arguments{
-\item{surv_ts}{A surveillance time series input. This can be one of the following:
-\itemize{
-  \item A \code{data.frame}, which can represent either a single or multiple time series.
-        This data.frame contains the following columns:
-        \itemize{
-          \item \strong{date}: The date of aggregation.
-          \item \strong{observed}: The observed number of cases.
-          \item \strong{id}: The identifier of the time series (even if only one).
-          \item \strong{offset} (optional): For example, the susceptible population.
-          \item \strong{state} (optional): Indicates periods with special events such as outbreaks
-            (e.g., 0 = normal, 1 = excess cases, NA = unknown).
-        }
-  \item A single \code{sts} object containing one timeseries.
-  \item A named list of \code{sts} objects, each representing a separate time series.
-}}
+\item{surv_ts}{\code{data.frame} surveillance time series as described in \emph{Details}.}
 
-\item{excode_model}{An object of class \code{\linkS4class{excodeModel}} which specifies the model parameters and structure}
+\item{timepoints}{Integer or integer vector of time points at which to perform detection; must be provided unless embedded in a \code{MultiState} formula.}
 
-\item{timepoints}{An \code{integer} or a sequence of integers specifying
-the time points for which excess count detection should be performed.}
+\item{time_units_back}{Integer number of past time \emph{units} used for fitting (interpreted relative to \code{timepoints_per_unit} in the model’s \code{excodeFormula}); default \code{5}.}
 
-\item{learning_type}{A \code{character} string indicating the type of learning.
-Must be one of \code{c("unsupervised", "semisupervised", "supervised")}.}
+\item{distribution}{Character emission family passed to \code{excodeFamily()}, e.g., \code{"Poisson"} or \code{"NegBinom"}.}
 
-\item{maxIter}{An \code{integer} specifying the maximum number of iterations
-for the Expectation-Maximization (EM) algorithm. Defaults to \code{100}.}
+\item{states}{Integer (>= 2) number of latent states for initialization/fitting.}
 
-\item{verbose}{A \code{logical} indicating whether progress should be printed
-during execution. Defaults to \code{FALSE}.}
+\item{time_trend}{Character time-trend specification forwarded to \code{excodeFormula()}, one of \code{c("Linear","Spline1","Spline2","Spline3","Spline4","None")}; default \code{"None"}.}
 
-\item{return_full_model}{A \code{logical} indicating whether to return the full
-model output. If \code{FALSE} (default), only results for the specified
-\code{timepoints} are returned. If \code{TRUE}, the complete time series used
-for model fitting is returned.}
+\item{periodic_model}{Character background model name forwarded to \code{excodeFormula()}, one of \code{c("Mean","FarringtonNoufaily","Harmonic","Custom")}; default \code{"Harmonic"}.}
 
-\item{past_timepoints_not_included}{An \code{integer} specifying the number of past
-time points to exclude from initialization. Defaults to \code{26}. If your data is daily then the past x days are excluded, for weekly data the past x weeks are excluded.}
+\item{period_length}{Integer number of time points per unit season used as \code{timepoints_per_unit} in \code{excodeFormula()} (e.g., \code{52} weekly per year, \code{365} daily per year); default \code{52}.}
 
-\item{time_units_back}{An \code{integer} specifying how many past time units to include when fitting the model.
-The default is \code{5}. For example, if \code{timepoints_per_unit = 52} (weekly data) was specified in excodeFormula,
-then this corresponds to using the past 5 years of data. If \code{timepoints_per_unit = 7} (daily data and the units are weeks) was specified in excodeFormula then time_units_back equal to \code{5} corresponds to the past 5 weeks.}
+\item{intercept}{Logical; include an intercept in the constructed formulas; default \code{TRUE}.}
+
+\item{covariate_df}{\code{data.frame} or \code{NULL}; optional covariates used when constructing \code{excodeFormula()}; default \code{NULL}.}
+
+\item{weights_threshold}{Numeric SD cutoff for \code{surveillance::algo.farrington.assign.weights()} when down-weighting residuals in the baseline refit; default \code{2.58}.}
+
+\item{weights_threshold_baseline}{Numeric Anscombe residual cutoff used to mark non-baseline points for clustering during initialization; default \code{1}.}
+
+\item{set_baseline_state}{Logical; if \code{TRUE}, compute/assign the background state after initialization; default \code{FALSE}.}
+
+\item{maxIter}{Integer maximum number of EM iterations; default \code{100}.}
+
+\item{verbose}{Logical; print progress; default \code{FALSE}.}
+
+\item{return_full_model}{Logical; if \code{FALSE} (default) return results only for the requested \code{timepoints}; if \code{TRUE}, return the full time series used for fitting at each \code{timepoint}.}
 }
 \value{
-Returns a fitted \code{\linkS4class{excodeModel}} object.
+A fitted \code{\linkS4class{excodeModel}} containing, for the requested time points (or the full series if \code{return_full_model = TRUE}), posterior state probabilities, fitted means, p-values, Anscombe residuals, convergence information, and information criteria.
 }
 \description{
-This function fits an `excodeModel` to epidemiological surveillance data
-and returns the estimated parameters of an `excodeFamily`. It can handle
-single or multiple time series.
+Fits an \code{\linkS4class{excodeModel}} to surveillance data and returns a fitted model with posterior state probabilities, fitted means, and diagnostics for excess-count detection; supports a single time series provided as a \code{data.frame}.
 }
 \details{
-This function currently accepts a single `sts` object, a `data.frame`, or a **named list of `sts` objects**.
-However, a **an `sts` object matrix** such as the `measlesDE` dataset from the surveillance package is currently not supported and will result in an error.
+The input \code{surv_ts} must be a \code{data.frame} with columns: \strong{date} (aggregation date), \strong{observed} (case counts), optional \strong{offset} (e.g., population at risk), and optional \strong{state} (e.g., 0 = background, 1 = excess, \code{NA} = unknown). Passing \code{sts} objects (from \pkg{surveillance}), lists of \code{sts}, or matrix-like collections of \code{sts} is not supported. If the model’s emission uses a \code{MultiState} \code{excodeFormula} that already contains a \code{surv_ts} slot, \code{run_excode()} uses that data and, if missing, sets \code{timepoints} accordingly.
 }
 \examples{
 
-# Creating a Poisson harmonic model for the examples
-excode_family_pois <- excodeFamily("Poisson")
-excode_formula_har <- excodeFormula("Harmonic")
-excode_har_pois <- excodeModel(
-  excode_family_pois,
-  excode_formula_har
-)
-# Example 1: Using data.frame as input time series
 data(shadar_df)
-result_shadar_har <- run_excode(shadar_df, excode_har_pois, 209:295)
-
-
-# Example 2: Using an sts object (from 'surveillance' package) as input time series
-library(surveillance)
-data(stsNewport)
-result_newport_har <- run_excode(stsNewport, excode_har_pois, 209:295)
-
-# Example 3: Using a named list of two sts objects as input
-stsShadar <- surveillance::sts(shadar_df$observed,
-  epoch = shadar_df$date,
-  state = shadar_df$state
-)
-named_list <- c("salmNewport" = stsNewport, "shadar" = stsShadar)
-result_list <- run_excode(
-  named_list,
-  excode_har_pois, 290
+res_har_pois <- run_excode(
+  surv_ts = shadar_df,
+  timepoints = 295,
+  distribution = "Poisson",
+  states = 2,
+  periodic_model = "Harmonic",
+  time_trend = "Linear",
+  set_baseline_state = TRUE
 )
 
 }
 \seealso{
-\code{\linkS4class{excodeModel}}
+\code{\linkS4class{excodeModel}}, \code{\linkS4class{excodeFamily}}, \code{\linkS4class{excodeFormula}}
 }

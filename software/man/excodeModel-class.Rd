@@ -3,59 +3,55 @@
 \docType{class}
 \name{excodeModel-class}
 \alias{excodeModel-class}
-\title{This class is a generic container for the model used for outbreak detection}
+\title{excodeModel Class}
 \description{
-This class is a generic container for the model used for outbreak detection
+The `excodeModel` class is a generic container for the model used for outbreak detection based on a hidden Markov model framework.
 }
 \section{Slots}{
 
 \describe{
 \item{\code{nStates}}{Number of states in the hidden Markov model.}
 
-\item{\code{emission}}{Emission of hidden Markov model. Includes a excodeFamily and a excodeFormula object.}
+\item{\code{emission}}{Emission component of the hidden Markov model, including an `excodeFamily` and an `excodeFormula` object.}
 
-\item{\code{transitions}}{Transition proabilities of hidden Markov model.}
+\item{\code{transitions}}{Transition probabilities of the hidden Markov model.}
 
-\item{\code{transitions_prior}}{Indicates whether a prior for transition probabilities should be used.}
+\item{\code{transitions_prior}}{Logical indicating whether a prior for transition probabilities should be used.}
 
-\item{\code{prior_weights}}{Dirichlet prior weights for transition probabilities. This cannot be changed by the user.}
+\item{\code{prior_weights}}{Dirichlet prior weights for transition probabilities; cannot be changed by the user.}
 
-\item{\code{loglik_transitions}}{Prior log likelihood of transition probabilities. Only relevant for model fitting.}
+\item{\code{loglik_transitions}}{Prior log-likelihood of transition probabilities; only relevant for model fitting.}
 
 \item{\code{initial_prob}}{Initial state probabilities of the hidden Markov model.}
 
-\item{\code{setBckgState}}{Indicates whether a background state should be computed for model fitting. Background states are set to 0s and time points where the Anscombe residuals of the initial model are < 1.}
+\item{\code{setBckgState}}{Logical indicating whether a background state should be computed for model fitting; background states are set to 0 for time points where the Anscombe residuals of the initial model are < 1.}
 
-\item{\code{id}}{Name of the time series}
+\item{\code{converged}}{Logical indicating whether the EM algorithm converged.}
 
-\item{\code{method}}{Method for parameter estimation, one of c("supervised", "unsupervised"). Default: "unsupervised".}
+\item{\code{niter}}{Number of iterations used for model fitting.}
 
-\item{\code{converged}}{Logical, indicating whether the EM-algorithm converged.}
+\item{\code{LogLik}}{Log-likelihood of the fitted model.}
 
-\item{\code{niter}}{Maximum number of iterations for model fitting.}
+\item{\code{AIC}}{Akaike information criterion of the fitted model.}
 
-\item{\code{LogLik}}{Log lokelihood of the fitted model.}
-
-\item{\code{AIC}}{Akaike information criterion  of the fitted model.}
-
-\item{\code{BIC}}{Bayesian information criterion  of the fitted model.}
+\item{\code{BIC}}{Bayesian information criterion of the fitted model.}
 
 \item{\code{posterior}}{Matrix of posterior probabilities for each time point (rows) and state (columns).}
 
-\item{\code{alpha}}{Alpha (Forward) probabilities of the HMM.}
+\item{\code{pval}}{P-values for testing whether each time point is in a normal or excess state.}
 
-\item{\code{pval}}{P-value for testing wheter timepoint is in normal or excess state.}
+\item{\code{zscore}}{Standardized Anscombe residuals (z-scores) for each time point.}
 
-\item{\code{timepoint_fit}}{Numeric time point in timeseries used for fitting.}
+\item{\code{timepoint_fit}}{Numeric time point in the time series used for fitting.}
 
-\item{\code{timepoint}}{Numeric time point in timeseries used for fitting.}
+\item{\code{timepoint}}{Numeric time point in the time series.}
 
-\item{\code{date}}{Date for each time point.}
+\item{\code{date}}{Date corresponding to each time point.}
 
-\item{\code{observed}}{Vector of observed number of cases.}
+\item{\code{observed}}{Vector of observed counts or case numbers.}
 
-\item{\code{population}}{Population size, default: 1.}
+\item{\code{population}}{Population size; default is 1.}
 
-\item{\code{error}}{Character string of error message (if an error occured).}
+\item{\code{error}}{Character string containing an error message, if an error occurred during model fitting.}
 }}
 

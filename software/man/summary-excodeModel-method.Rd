@@ -2,59 +2,43 @@
 % Please edit documentation in R/4-excodeModel-class.R
 \name{summary,excodeModel-method}
 \alias{summary,excodeModel-method}
-\title{Summary of an excodeModel.}
+\title{Summary of an excodeModel}
 \usage{
 \S4method{summary}{excodeModel}(
   object,
-  pars = c("posterior", "pval", "date", "timepoint", "observed", "emission", "id", "BIC",
-    "AIC"),
+  pars = c("posterior", "pval", "zscore", "date", "timepoint", "observed", "emission",
+    "BIC", "AIC"),
   prob_threshold = 0.5,
-  pval_threshold = 0.01,
+  pval_threshold = 0.05,
+  anscombe_threshold = 2,
   maxiter = 1000
 )
 }
 \arguments{
-\item{object}{An object of class \code{excodeModel}. The fitted model to summarize.}
+\item{object}{An \code{excodeModel} to summarize.}
 
-\item{pars}{Character vector. Specifies which parameters or variables to extract and include in the summary.
-Typical entries include: \code{"posterior"}, \code{"pval"}, \code{"date"}, \code{"timepoint"},
-\code{"observed"}, \code{"emission"}, \code{"id"}, \code{"BIC"}, \code{"AIC"}. Default includes all.}
+\item{pars}{Character vector of fields to include (e.g., \code{"posterior"}, \code{"pval"}, \code{"zscore"}, \code{"date"}, \code{"timepoint"}, \code{"observed"}, \code{"emission"}, \code{"BIC"}, \code{"AIC"}); defaults to all.}
 
-\item{prob_threshold}{Numeric. Posterior probability threshold used to calculate the upper bound for the expected number of cases under the posterior.
-This value controls the sensitivity of alarm detection: a lower \code{prob_threshold} results in a lower \code{posterior_ub}.
-The computed upper bound is returned in the \code{posterior_ub} column of the summary output.
-Observations with a posterior probability greater than or equal to this threshold are marked as excess count.
-Default is 0.5.}
+\item{prob_threshold}{Numeric posterior probability threshold used to compute the posterior-based upper bound (\code{posterior_ub}) and flag excess counts (>= threshold); default 0.5.}
 
-\item{pval_threshold}{Numeric. p-value threshold used used to calculate the upper bound for the expected number of cases using quantiles based on the p-value.
-This threshold determines the sensitivity of detection: lower values result in more conservative signal classification.
-It is used to compute the \code{pval_ub} column in the summary output.
-Observations with a p-value less than or equal to this threshold are marked as excess counts.
-Default is 0.01.}
+\item{pval_threshold}{Numeric p-value threshold used to compute the p-value-based upper bound (\code{pval_ub}) and flag excess counts (<= threshold); default 0.01.}
 
-\item{maxiter}{Integer. Maximum number of iterations to use when estimating the posterior alarm threshold. Default is 1000.}
+\item{anscombe_threshold}{Numeric threshold on the Anscombe z-score used for signal assessment; default 2.}
+
+\item{maxiter}{Integer maximum iterations when estimating the posterior alarm threshold; default 1000.}
 }
 \value{
-A data.frame summarizing the selected components of the \code{excodeModel}, including expected values, posterior,
-p-value, and model fit metrics (such as AIC and BIC) depending on the values of \code{pars}.
+A \code{data.frame} summarizing selected components of the \code{excodeModel} (expected values, posterior, p-value, and fit metrics such as AIC/BIC) according to \code{pars}.
 }
 \description{
-Provides a summary of the \code{excodeModel} object, containing the results for those time points where excess count detection was performed.
-By default, the summary includes model-based expectations, posterior probabilities, p-values, and their corresponding signal thresholds,
-computed according to the model specification.
+Summarize a fitted \code{excodeModel} at time points where excess-count detection was performed, including expectations, posterior probabilities, p-values, and corresponding thresholds per the model specification.
 }
 \examples{
 
-# Looking at summary of the results using a harmonic Poisson model on the shadar_df
-\dontrun{
-#' excode_family_pois <- excodeFamily("Poisson")
-excode_formula_har <- excodeFormula("Harmonic")
-excode_har_pois <- excodeModel(excode_family_pois, excode_formula_har)
-# perform excess count detection for time points 209:295
-result_shadar_har <- run_excode(shadar_df, excode_har_pois, 209:295)
-# obtain the summary of the results for the time points 209:295
-summary(result_shadar_har)
-}
+data(shadar_df)
+res_har_pois <- run_excode(surv_ts = shadar_df, timepoints = 295, distribution = "Poisson", 
+states = 2, periodic_model = "Harmonic", time_trend = "Linear", set_baseline_state = TRUE)
+summary(res_har_pois)
 
 }
 \seealso{

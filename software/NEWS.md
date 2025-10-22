@@ -1,3 +1,3 @@
-# excode 0.0.0.9000
+# excode 0.0.0.9100
 
-* This is the inital release of excode (development version), which provides code for excess count detection in epidemiological time series.
+* This is the revised release of excode (development version), which provides simplified code for excess count detection in epidemiological time series.

@@ -1,7 +1,7 @@
 #' @keywords internal
 #' @aliases excode-package
 #' @import surveillance
-#' @import MASS
+#' @importFrom MASS glm.nb
 #' @import methods
 #' @import graphics
 #' @import stats

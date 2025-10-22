@@ -1,6 +1,6 @@
 Package: excode
 Title: Excess Count Detection in Epidemiological Time Series
-Version: 0.0.0.9000
+Version: 0.0.0.9100
 Authors@R: 
     c(person("Benedikt", "Zacher", , "ZacherB@rki.de", role = c("aut", "cre","cph")),
       person("Ann Christin", "Vietor", role = "ctb"))
@@ -17,15 +17,19 @@ License: GPL-3
 Depends: 
     R (>= 4.3.0)
 Imports: 
+    dplyr,
     graphics,
+    ggplot2,
+    magrittr,
     MASS,
     methods,
+    patchwork,
+    rlang,
     splines,
     stats,
-    surveillance
+    surveillance,
+    tidyr
 Suggests: 
-    dplyr,
-    ggplot2,
     gridExtra,
     kableExtra,
     knitr,

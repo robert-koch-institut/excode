@@ -2,7 +2,7 @@
 % Please edit documentation in R/2-excodeFormula-class.R
 \name{excodeFormula}
 \alias{excodeFormula}
-\title{Create a formula of the model for excess count detection}
+\title{Create a formula for excess count detection}
 \usage{
 excodeFormula(
   name,
@@ -11,55 +11,44 @@ excodeFormula(
   noPeriods = 10,
   w = 3,
   timeTrend = TRUE,
+  time_trend = "Linear",
   intercept = TRUE,
   data = NULL,
-  df_season = 4,
-  df_trend = 1,
+  surv_ts = data.frame(),
   nStates = NULL,
-  shared_params = FALSE,
   offset = FALSE
 )
 }
 \arguments{
-\item{name}{Character. Name of the model. Must be one of c("Mean", "FarringtonNoufaily", "Harmonic", "Custom", "MultiState").}
+\item{name}{Character; model name, one of `c("Mean","FarringtonNoufaily","Harmonic","Custom","MultiState")`.}
 
-\item{S}{Integer. Number of oscillations during one year for Harmonic models. Default is 1.}
+\item{S}{Integer; number of harmonic oscillations per year for Harmonic models; default 1.}
 
-\item{timepoints_per_unit}{An \code{integer} giving the number of time points within one time unit. 
-For example, use \code{52} for weekly data over a year, \code{7} for daily data with weekly cycles, 
-or \code{365} for daily data with annual cycles. The default is \code{52}.}
+\item{timepoints_per_unit}{Integer; number of time points per unit (e.g., 52 weekly points per year, 365 daily points per year); default 52.}
 
-\item{noPeriods}{Integer. Number of levels in the factor which creates bins in each year to model seasonal patterns. Only used in 'FarringtonNoufaily' models. Default is 10.}
+\item{noPeriods}{Integer; number of seasonal bins per year (Farrington-Noufaily only); default 10.}
 
-\item{w}{Integer. The number of weeks before and after the current week to include in the bin which contains the respective week in each year. Only used in 'FarringtonNoufaily' models. Default is 3.}
+\item{w}{Integer; half-window (weeks) around the current week used to form seasonal bins (Farrington-Noufaily only); default 3.}
 
-\item{timeTrend}{Logical. Indicates whether a time trend should be included in the model. Used in 'Mean', 'Harmonic' and 'FarringtonNoufaily' models. Default is TRUE.}
+\item{timeTrend}{Logical; include a time trend (Mean, Harmonic, Farrington-Noufaily); default TRUE.}
 
-\item{intercept}{Logical. TRUE if the model should include an intercept, FALSE otherwise. Only used with 'MultiState' models.Default is TRUE.}
+\item{time_trend}{Character; time-trend form, one of `c("Linear","Spline1","Spline2","None")`; default "Linear".}
 
-\item{data}{data.frame. A data.frame containing variables which are used to model case counts. All variables in the data.frame will be used in the model. The data.frame has to have the same number of rows as time points in the time series. Default is NULL.}
+\item{intercept}{Logical; include an intercept (used in MultiState and Custom models); default TRUE.}
 
-\item{df_season}{Integer. Degrees of freedom for spline modeling seasonality. This class uses cubic splines, which are not recommended to model periodic patterns.  Only used for 'Splines' models. Default is 4.}
+\item{data}{data.frame or NULL; covariate data used to build the model (all columns are included); required for "Custom", optional for others; defaults to NULL.}
 
-\item{df_trend}{Integer. Degrees of freedom for spline modeling the time trend. Only used for 'Splines' models. Default is 1.}
+\item{surv_ts}{data.frame; time-series data (used by MultiState); defaults to an empty data.frame.}
 
-\item{nStates}{The number of states of the model. Default is NULL.}
+\item{nStates}{Integer or NULL; number of states for MultiState models; default NULL.}
 
-\item{shared_params}{Logical. Indicates whether model parameters are shared across multiple time series. Default is FALSE.}
-
-\item{offset}{Logical. Whether an offset should be included in the model. Default is FALSE.}
+\item{offset}{Logical; whether to include an offset (population) term; default FALSE.}
 }
 \value{
-An S4 object of class \code{excodeFormula} representing the specified model formula.
+An S4 object of class `excodeFormula` representing the specified model formula.
 }
 \description{
-Constructs a model formula object for detecting excess counts using various model types,
-such as Mean, Harmonic, Farrington-Noufaily, Custom, MultiState, and Splines.
-}
-\examples{
-
-excode_formula_har <- excodeFormula("Harmonic")
-
+Constructs an `excodeFormula` object for detecting excess counts using model types such as Mean, Harmonic, Farrington-Noufaily, Custom, and MultiState.
 }
 \seealso{
 \code{\linkS4class{excodeFormula}}

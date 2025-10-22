@@ -3,13 +3,8 @@ setGeneric("createFormula", function(distribution, excode_formula) standardGener
 setMethod("createFormula",
   signature = c("excodeFamily", "FarringtonNoufaily"),
   function(distribution, excode_formula) {
-    params <- c("1", ifelse(excode_formula@timeTrend, "wtime", ""), "seasgroups")
+    params <- c("1", ifelse(excode_formula@timeTrend, "timepoint", ""), "seasgroups")
 
-    # Add shared model specification and collapse
-    if (!excode_formula@shared_params) {
-      params[params == "1"] <- "id"
-      params[params != "id"] <- paste(params[params != "id"], "*id", sep = "")
-    }
     params[length(params) + 1] <- "offset(log(population))"
     params <- paste(params, collapse = " + ")
 
@@ -25,17 +20,12 @@ setMethod("createFormula",
     if (excode_formula@S > 0) {
       season <- paste0(c("sin", "cos"), excode_formula@S)
     }
-    wtime <- NULL
+    timepoint <- NULL
     if (excode_formula@timeTrend) {
-      wtime <- "wtime"
+      timepoint <- "timepoint"
     }
-    params <- c("1", wtime, season)
+    params <- c("1", timepoint, season)
 
-    # Add shared model specification and collapse
-    if (!excode_formula@shared_params) {
-      params[params == "1"] <- "id"
-      params[params != "id"] <- paste(params[params != "id"], "*id", sep = "")
-    }
     params[length(params) + 1] <- "offset(log(population))"
     params <- paste(params, collapse = " + ")
 
@@ -43,47 +33,16 @@ setMethod("createFormula",
   }
 )
 
-
-
-setMethod("createFormula",
-  signature = c("excodeFamily", "Splines"),
-  function(distribution, excode_formula) {
-    season <- NULL
-    if (excode_formula@df_season > 0) {
-      season <- paste0("season_", 1:excode_formula@df_season)
-    }
-    wtime <- NULL
-    if (excode_formula@df_trend > 0) {
-      wtime <- paste0("wtime_", 1:excode_formula@df_trend)
-    }
-    params <- c("1", wtime, season)
-
-    # Add shared model specification and collapse
-    if (!excode_formula@shared_params) {
-      params[params == "1"] <- "id"
-      params[params != "id"] <- paste(params[params != "id"], "*id", sep = "")
-    }
-    params[length(params) + 1] <- "offset(log(population))"
-    params <- paste(params, collapse = " + ")
-
-    paste0("response ~ ", params)
-  }
-)
 
 setMethod("createFormula",
   signature = c("excodeFamily", "Mean"),
   function(distribution, excode_formula) {
-    wtime <- NULL
+    timepoint <- NULL
     if (excode_formula@timeTrend) {
-      wtime <- "wtime"
+      timepoint <- "timepoint"
     }
-    params <- c("1", wtime)
+    params <- c("1", timepoint)
 
-    # Add shared model specification and collapse
-    if (!excode_formula@shared_params) {
-      params[params == "1"] <- "id"
-      params[params != "id"] <- paste(params[params != "id"], "*id", sep = "")
-    }
     params[length(params) + 1] <- "offset(log(population))"
     params <- paste(params, collapse = " + ")
 
@@ -96,11 +55,6 @@ setMethod("createFormula",
   function(distribution, excode_formula) {
     params <- c("1", names(excode_formula@data))
 
-    # Add shared model specification and collapse
-    if (!excode_formula@shared_params) {
-      params[params == "1"] <- "id"
-      params[params != "id"] <- paste(params[params != "id"], "*id", sep = "")
-    }
     params[length(params) + 1] <- "offset(log(population))"
     params <- paste(params, collapse = " + ")
 
@@ -114,13 +68,13 @@ setMethod("createFormula",
   function(distribution, excode_formula) {
     offset_par <- ifelse(excode_formula@intercept, "1", "0")
     params <- c(offset_par, names(excode_formula@data))
-    # Add shared model specification and collapse
-    # if(!excode_formula@shared_params) {
-    #  params[params=="1"] = "id"
-    #  params[params!="id"] = paste(params[params!="id"], "*id", sep="")
-    # }
     params[length(params) + 1] <- "offset(log(population))"
     params <- paste(params, collapse = " + ")
     paste0("response ~ ", params)
   }
 )
+
+create_formula <- function(distribution, excode_formula) {
+  params <- paste(excode_formula@params, collapse = " + ")
+  paste0("response ~ ", params)
+}

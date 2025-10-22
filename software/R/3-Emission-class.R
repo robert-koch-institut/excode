@@ -1,17 +1,21 @@
-#' This class is a generic container for the model used for excess count detection, which defines the probability distributions.
+#' @title Emission Class
 #'
-#' @slot name Name of the emission.
-#' @slot mu Matrix that stores in each column the mean for the respective state.
-#' @slot mu0 Numeric vector containing the mean for the 'normal' state in 2-state models.
-#' @slot mu1 Numeric vector containing the mean for the 'excess' state in 2-state models. Name of the emission.
+#' @description The `Emission` class is a generic container for the model used in excess count detection. It defines the probability distributions that describe the emission process in the model.
+#'
+#' @slot name A character string giving the name of the emission.
+#' @slot mu A numeric matrix where each column stores the mean (`mu`) for the respective hidden state of the model.
+#' @slot excode_formula An object of class `excodeFormula` specifying the model formula used to describe the emission process.
+#' @slot glm An object of class `glm` representing the fitted generalized linear model for the emission.
+#'
+#' @seealso [stats::glm()] for generalized linear models; [methods::setClass()] for S4 class definitions.
 #'
 #' @exportClass Emission
 setClass("Emission",
   slots = c(
     name = "character",
     mu = "matrix",
-    mu0 = "numeric",
-    mu1 = "numeric"
+    excode_formula = "excodeFormula",
+    glm = "glm"
   )
 )
 
@@ -27,8 +31,7 @@ setClass("Emission",
 setClass("EmissionGLMPoisson",
   contains = "Emission",
   slots = c(
-    distribution = "Poisson",
-    excode_formula = "excodeFormula"
+    distribution = "Poisson"
   )
 )
 
@@ -44,8 +47,7 @@ setClass("EmissionGLMPoisson",
 setClass("EmissionGLMNegBinom",
   contains = "Emission",
   slots = c(
-    distribution = "NegBinom",
-    excode_formula = "excodeFormula"
+    distribution = "NegBinom"
   )
 )
 
@@ -60,21 +62,25 @@ setClass("EmissionGLMNegBinom",
 #'
 #' @export
 Emission <- function(distribution, excode_formula, initial_mu = NULL) {
-  formula_bckg <- createFormula(distribution, excode_formula)
+  formula_bckg <- create_formula(distribution, excode_formula)
   formula <- paste0(formula_bckg, " + state")
   excode_formula@formula <- formula
   excode_formula@formula_bckg <- formula_bckg
+  empty_glm <- list()
+  class(empty_glm) <- "glm"
 
   obj <- NULL
   if (!is.null(initial_mu)) {
     obj <- new(paste0("EmissionGLM", is(distribution)[1]),
       distribution = distribution,
-      excode_formula = excode_formula, mu = initial_mu
+      excode_formula = excode_formula, mu = initial_mu,
+      glm = empty_glm
     )
   } else {
     obj <- new(paste0("EmissionGLM", is(distribution)[1]),
       distribution = distribution,
-      excode_formula = excode_formula
+      excode_formula = excode_formula,
+      glm = empty_glm
     )
   }
 }
@@ -98,6 +104,76 @@ Emission <- function(distribution, excode_formula, initial_mu = NULL) {
 setGeneric("updateEmission", function(emission, dat, omega) standardGeneric("updateEmission"))
 
 
+#' @title Returns Anscombe residuals for a fitted Emission.
+#'
+#' @param emission An \code{\linkS4class{Emission}} object.
+#' @returns A vector containing the Anscombe residuals for the fitted baseline state.
+#'
+#' @seealso \code{\linkS4class{Emission}}
+#'
+#' @keywords internal
+#' @noRd
+setGeneric("zscores", function(emission, model_data) standardGeneric("zscores"))
+
+setMethod("zscores",
+  signature = c("EmissionGLMPoisson", "data.frame"),
+  function(emission, model_data) {
+    glm_data <- model.frame(emission@glm) # model_data#
+    col_w <- which(names(glm_data) == "(weights)")
+    names(glm_data)[col_w] <- "weights"
+    glm_weights <- glm_data$weights
+    baseline_state <- which(model_data$state == 0)
+    glm_weights <- glm_weights[baseline_state]
+    formula_baseline <- as.formula(emission@excode_formula@formula_bckg)
+    # print(c(length(gamma), sum(gamma)))
+    downweighted <- (glm_weights < 1)
+
+    gamma <- length(glm_weights) / (sum(glm_weights^(downweighted)))
+    omega <- numeric(length(glm_weights))
+    omega[downweighted] <- gamma * (glm_weights[downweighted])
+    omega[!downweighted] <- gamma
+
+    suppressWarnings(qpois_model <- glm(formula_baseline,
+      data = model_data[baseline_state, ],
+      family = quasipoisson(link = "log"),
+      weights = omega
+    ))
+    phi <- max(summary(qpois_model)$dispersion, 1)
+    qpois_anscombe_res <- surveillance::anscombe.residuals(qpois_model, phi)
+    as.vector(qpois_anscombe_res)
+  }
+)
+
+
+setMethod("zscores",
+  signature = c("EmissionGLMNegBinom", "data.frame"),
+  function(emission, model_data) {
+    glm_data <- model.frame(emission@glm) # model_data#
+    col_w <- which(names(glm_data) == "(weights)")
+    names(glm_data)[col_w] <- "weights"
+    glm_weights <- glm_data$weights
+    baseline_state <- which(model_data$state == 0)
+    glm_weights <- glm_weights[baseline_state]
+    formula_baseline <- as.formula(emission@excode_formula@formula_bckg)
+    # print(c(length(gamma), sum(gamma)))
+    downweighted <- (glm_weights < 1)
+
+    gamma <- length(glm_weights) / (sum(glm_weights^(downweighted)))
+    omega <- numeric(length(glm_weights))
+    omega[downweighted] <- gamma * (glm_weights[downweighted])
+    omega[!downweighted] <- gamma
+
+    suppressWarnings(qpois_model <- glm(formula_baseline,
+      data = model_data[baseline_state, ],
+      family = quasipoisson(link = "log"),
+      weights = omega
+    ))
+    phi <- max(summary(qpois_model)$dispersion, 1)
+    qpois_anscombe_res <- surveillance::anscombe.residuals(qpois_model, phi)
+    as.vector(qpois_anscombe_res)
+  }
+)
+
 
 #' @title Returns estimated parameters of an excodeFamily.
 #'
@@ -114,8 +190,6 @@ setMethod("summary_emission",
   signature = c("Emission"),
   function(emission) {
     family_df <- summary_family(emission@distribution)
-    # emission_df <- data.frame(mu0=emission@mu0,
-    #                          mu1=emission@mu1)
     emission_df <- data.frame(emission@mu)
     names(emission_df) <- paste0("mu", 0:(ncol(emission_df) - 1))
     emission_summary <- emission_df

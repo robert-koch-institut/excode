@@ -9,7 +9,6 @@ A tibble with 418 rows and 7 variables:
 \describe{
   \item{date}{Week of death}
   \item{observed}{Number of deaths}
-  \item{id}{Name of time series}
   \item{timepoint}{A numeric column counting sequential weeks from 0 to total number of weeks, representing time progression for time-trend modeling}
   \item{sin52}{Computed sinus component used for harmonic modeling}
   \item{cos52}{Computed cosine component used for harmonic modeling}

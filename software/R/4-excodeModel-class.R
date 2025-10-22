@@ -1,30 +1,29 @@
-#' This class is a generic container for the model used for outbreak detection
+#' @title excodeModel Class
+#'
+#' @description The `excodeModel` class is a generic container for the model used for outbreak detection based on a hidden Markov model framework.
 #'
 #' @slot nStates Number of states in the hidden Markov model.
-#' @slot emission Emission of hidden Markov model. Includes a excodeFamily and a excodeFormula object.
-#' @slot transitions Transition proabilities of hidden Markov model.
-#' @slot transitions_prior Indicates whether a prior for transition probabilities should be used.
-#' @slot prior_weights Dirichlet prior weights for transition probabilities. This cannot be changed by the user.
-#' @slot loglik_transitions Prior log likelihood of transition probabilities. Only relevant for model fitting.
+#' @slot emission Emission component of the hidden Markov model, including an `excodeFamily` and an `excodeFormula` object.
+#' @slot transitions Transition probabilities of the hidden Markov model.
+#' @slot transitions_prior Logical indicating whether a prior for transition probabilities should be used.
+#' @slot prior_weights Dirichlet prior weights for transition probabilities; cannot be changed by the user.
+#' @slot loglik_transitions Prior log-likelihood of transition probabilities; only relevant for model fitting.
 #' @slot initial_prob Initial state probabilities of the hidden Markov model.
-#' @slot setBckgState Indicates whether a background state should be computed for model fitting. Background states are set to 0s and time points where the Anscombe residuals of the initial model are < 1.
-#' @slot id Name of the time series
-#' @slot method Method for parameter estimation, one of c("supervised", "unsupervised"). Default: "unsupervised".
-#' @slot converged Logical, indicating whether the EM-algorithm converged.
-#' @slot niter Maximum number of iterations for model fitting.
-#' @slot LogLik Log lokelihood of the fitted model.
-#' @slot AIC Akaike information criterion  of the fitted model.
-#' @slot BIC Bayesian information criterion  of the fitted model.
+#' @slot setBckgState Logical indicating whether a background state should be computed for model fitting; background states are set to 0 for time points where the Anscombe residuals of the initial model are < 1.
+#' @slot converged Logical indicating whether the EM algorithm converged.
+#' @slot niter Number of iterations used for model fitting.
+#' @slot LogLik Log-likelihood of the fitted model.
+#' @slot AIC Akaike information criterion of the fitted model.
+#' @slot BIC Bayesian information criterion of the fitted model.
 #' @slot posterior Matrix of posterior probabilities for each time point (rows) and state (columns).
-#' @slot alpha Alpha (Forward) probabilities of the HMM.
-#' @slot pval P-value for testing wheter timepoint is in normal or excess state.
-#' @slot timepoint_fit Numeric time point in timeseries used for fitting.
-#' @slot timepoint Numeric time point in timeseries used for fitting.
-#' @slot date Date for each time point.
-#' @slot observed Vector of observed number of cases.
-#' @slot population Population size, default: 1.
-#' @slot error Character string of error message (if an error occured).
-#'
+#' @slot pval P-values for testing whether each time point is in a normal or excess state.
+#' @slot zscore Standardized Anscombe residuals (z-scores) for each time point.
+#' @slot timepoint_fit Numeric time point in the time series used for fitting.
+#' @slot timepoint Numeric time point in the time series.
+#' @slot date Date corresponding to each time point.
+#' @slot observed Vector of observed counts or case numbers.
+#' @slot population Population size; default is 1.
+#' @slot error Character string containing an error message, if an error occurred during model fitting.
 #'
 #' @exportClass excodeModel
 setClass("excodeModel",
@@ -37,16 +36,14 @@ setClass("excodeModel",
     loglik_transitions = "numeric",
     initial_prob = "numeric",
     setBckgState = "logical",
-    id = "character",
-    method = "character",
     converged = "logical",
     niter = "numeric",
     LogLik = "numeric",
     AIC = "numeric",
     BIC = "numeric",
     posterior = "matrix",
-    alpha = "matrix",
     pval = "numeric",
+    zscore = "numeric",
     timepoint_fit = "numeric",
     timepoint = "numeric",
     date = "Date",
@@ -73,7 +70,6 @@ setMethod(f = "show", signature = c("excodeModel"), function(object) {
     sep = ""
   )
 })
-
 
 
 #' @title Create a model for excess count detection
@@ -103,12 +99,6 @@ setMethod(f = "show", signature = c("excodeModel"), function(object) {
 #'
 #' @return An object of class \code{\linkS4class{excodeModel}}.
 #'
-#' @examples
-#' # Initialisation of a mean model without timetrend with Poisson emission
-#'
-#' excode_formula_mean <- excodeFormula("Mean", timeTrend = FALSE)
-#' excode_family_pois <- excodeFamily("Poisson")
-#' excodeModel(excode_family_pois, excode_formula_mean)
 #'
 #' @export
 excodeModel <- function(family, formula,
@@ -131,13 +121,17 @@ excodeModel <- function(family, formula,
       initProb <- c(0.5, 0.5)
     }
   } else {
-    initProb <- rep(1 / nStates, length = nStates)
-    transMat <- matrix(rep(initProb, length = nStates),
-      ncol = nStates,
-      nrow = nStates
-    )
+    if (is.null(transMat)) {
+      transMat <- matrix(rep(initProb, length = nStates),
+        ncol = nStates,
+        nrow = nStates
+      )
+    }
+    if (is.null(initProb)) {
+      initProb <- rep(1 / nStates, length = nStates)
+    }
     setBckgState <- FALSE
-    transMat_prior <- FALSE
+    transMat_prior <- TRUE
   }
 
 
@@ -155,26 +149,23 @@ excodeModel <- function(family, formula,
 }
 
 updateTransInitProb <- function(excode_model, gamma, xsi, modelData) {
-  log_dir1 <- 0
-  log_dir2 <- 0
-
   transMat <- Reduce("+", xsi)
-  gammaSum_ind <- which(modelData$wtime != max(modelData$wtime) & modelData$state == 0)
+  gammaSum_ind <- which(modelData$timepoint != max(modelData$timepoint) & modelData$state == 0)
   # print(gammaSum_ind)
   gammaSum <- apply(gamma[gammaSum_ind, ], 2, sum)
   if (excode_model@transitions_prior) { # Update with prior weights
+    log_dir <- 0
     for (i in 1:nrow(transMat)) {
-      transMat[i, ] <- (excode_model@prior_weights[i, ] - 1 + transMat[i, ]) / (sum(excode_model@prior_weights[i, ]) - 2 + gammaSum[i])
+      transMat[i, ] <- (excode_model@prior_weights[i, ] - 1 + transMat[i, ]) / (sum(excode_model@prior_weights[i, ]) - ncol(transMat) + gammaSum[i])
+      log_dir <- log_dir + log_dirichlet(transMat[i, ], excode_model@prior_weights[i, ])
     }
-    log_dir1 <- log_dirichlet(transMat[1, ], excode_model@prior_weights[1, ])
-    log_dir2 <- log_dirichlet(transMat[2, ], excode_model@prior_weights[2, ])
   } else { # Update without prior
     for (i in 1:nrow(transMat)) {
       transMat[i, ] <- transMat[i, ] / gammaSum[i]
     }
   }
 
-  initProb_ind <- which(modelData$wtime == 0 & modelData$state == 0)
+  initProb_ind <- which(modelData$timepoint == 0 & modelData$state == 0)
   initProb <- gamma[initProb_ind, ]
   if (length(initProb_ind) > 1) {
     initProb <- apply(initProb, 2, sum)
@@ -183,64 +174,44 @@ updateTransInitProb <- function(excode_model, gamma, xsi, modelData) {
 
   excode_model@transitions <- transMat
   excode_model@initial_prob <- as.vector(initProb)
-  excode_model@loglik_transitions <- log_dir1 + log_dir2
+  excode_model@loglik_transitions <- log_dir
 
   excode_model
 }
 
 
-#' @title Summary of an excodeModel.
+#' @title Summary of an excodeModel
 #'
-#' @description
-#' Provides a summary of the \code{excodeModel} object, containing the results for those time points where excess count detection was performed.
-#' By default, the summary includes model-based expectations, posterior probabilities, p-values, and their corresponding signal thresholds,
-#' computed according to the model specification.
+#' @description Summarize a fitted \code{excodeModel} at time points where excess-count detection was performed, including expectations, posterior probabilities, p-values, and corresponding thresholds per the model specification.
 #'
-#' @param object An object of class \code{excodeModel}. The fitted model to summarize.
-#' @param pars Character vector. Specifies which parameters or variables to extract and include in the summary.
-#'        Typical entries include: \code{"posterior"}, \code{"pval"}, \code{"date"}, \code{"timepoint"},
-#'        \code{"observed"}, \code{"emission"}, \code{"id"}, \code{"BIC"}, \code{"AIC"}. Default includes all.
-#' @param prob_threshold Numeric. Posterior probability threshold used to calculate the upper bound for the expected number of cases under the posterior.
-#'        This value controls the sensitivity of alarm detection: a lower \code{prob_threshold} results in a lower \code{posterior_ub}.
-#'        The computed upper bound is returned in the \code{posterior_ub} column of the summary output.
-#'        Observations with a posterior probability greater than or equal to this threshold are marked as excess count.
-#'        Default is 0.5.
-#' @param pval_threshold Numeric. p-value threshold used used to calculate the upper bound for the expected number of cases using quantiles based on the p-value.
-#'        This threshold determines the sensitivity of detection: lower values result in more conservative signal classification.
-#'        It is used to compute the \code{pval_ub} column in the summary output.
-#'        Observations with a p-value less than or equal to this threshold are marked as excess counts.
-#'        Default is 0.01.
-
-#' @param maxiter Integer. Maximum number of iterations to use when estimating the posterior alarm threshold. Default is 1000.
+#' @param object An \code{excodeModel} to summarize.
+#' @param pars Character vector of fields to include (e.g., \code{"posterior"}, \code{"pval"}, \code{"zscore"}, \code{"date"}, \code{"timepoint"}, \code{"observed"}, \code{"emission"}, \code{"BIC"}, \code{"AIC"}); defaults to all.
+#' @param prob_threshold Numeric posterior probability threshold used to compute the posterior-based upper bound (\code{posterior_ub}) and flag excess counts (>= threshold); default 0.5.
+#' @param pval_threshold Numeric p-value threshold used to compute the p-value-based upper bound (\code{pval_ub}) and flag excess counts (<= threshold); default 0.01.
+#' @param anscombe_threshold Numeric threshold on the Anscombe z-score used for signal assessment; default 2.
+#' @param maxiter Integer maximum iterations when estimating the posterior alarm threshold; default 1000.
 #'
-#' @return A data.frame summarizing the selected components of the \code{excodeModel}, including expected values, posterior,
-#' p-value, and model fit metrics (such as AIC and BIC) depending on the values of \code{pars}.
+#' @return A \code{data.frame} summarizing selected components of the \code{excodeModel} (expected values, posterior, p-value, and fit metrics such as AIC/BIC) according to \code{pars}.
 #'
 #' @seealso \code{\linkS4class{excodeModel}}, \code{\linkS4class{excodeFamily}}, \code{\linkS4class{excodeFormula}}
 #'
 #' @examples
 #'
-#' # Looking at summary of the results using a harmonic Poisson model on the shadar_df
-#' \dontrun{
-#' #' excode_family_pois <- excodeFamily("Poisson")
-#' excode_formula_har <- excodeFormula("Harmonic")
-#' excode_har_pois <- excodeModel(excode_family_pois, excode_formula_har)
-#' # perform excess count detection for time points 209:295
-#' result_shadar_har <- run_excode(shadar_df, excode_har_pois, 209:295)
-#' # obtain the summary of the results for the time points 209:295
-#' summary(result_shadar_har)
-#' }
-
+#' data(shadar_df)
+#' res_har_pois <- run_excode(surv_ts = shadar_df, timepoints = 295, distribution = "Poisson", 
+#' states = 2, periodic_model = "Harmonic", time_trend = "Linear", set_baseline_state = TRUE)
+#' summary(res_har_pois)
 #'
 #' @export
 setMethod("summary",
   signature = c("excodeModel"),
   function(object, pars = c(
-             "posterior", "pval", "date", "timepoint",
-             "observed", "emission", "id", "BIC", "AIC"
+             "posterior", "pval", "zscore", "date", "timepoint",
+             "observed", "emission", "BIC", "AIC"
            ),
            prob_threshold = 0.5,
-           pval_threshold = 0.01,
+           pval_threshold = 0.05,
+           anscombe_threshold = 2,
            maxiter = 1000) {
     emission_df <- NULL
     posterior_df <- NULL
@@ -288,60 +259,15 @@ setMethod("summary",
       res_df <- cbind(res_df, posterior_df)
     }
 
+
     res_df <- res_df[pars_order]
 
-    if (object@nStates == 2) {
-      posterior_bound <- calcPosteriorBound(object, prob_threshold, maxiter)
-      posterior_bound$timepoint <- posterior_bound$timepoint_fit
-
-      res_df <- merge(res_df, posterior_bound,
-        by = c("timepoint_fit", "timepoint", "id"),
-        all.x = TRUE
-      )
-
-      pval_bound <- calcPvalueBound(
-        object@emission@distribution,
-        object, pval_threshold
-      )
-      pval_bound$timepoint <- pval_bound$timepoint_fit
-
-      res_df <- merge(res_df, pval_bound,
-        by = c("timepoint_fit", "timepoint", "id"),
-        all.x = TRUE
-      )
-    }
 
     if (remove_timpoint_fit) {
       pars_order <- pars_order[pars_order != "timepoint_fit"]
     }
 
-    if (object@nStates == 2) {
-      pars_order <- c(pars_order, "posterior_ub", "pval_ub")
-      pars_order <- pars_order[pars_order != "posterior0"]
-      pars_order[which(pars_order == "posterior1")] <- "posterior"
-      names(res_df)[names(res_df) == "posterior1"] <- "posterior"
-    }
 
     res_df[pars_order]
   }
 )
-
-
-
-
-
-
-#' @title Summary of an excodeModel.
-#'
-#' @param x An excodeModel object.
-#'
-#' @seealso \code{\linkS4class{excodeModel}}, \code{\linkS4class{excodeFamily}}, \code{\linkS4class{excodeFormula}}
-#'
-#' @examples
-#'
-#' # TODO
-#'
-#' @export
-setMethod(f = "plot", signature = "excodeModel", function(x) {
-  excode::plot_model(x)
-})
