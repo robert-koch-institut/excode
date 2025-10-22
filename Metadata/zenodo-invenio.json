@@ -1,10 +1,10 @@
 {
   "title": "excode: Excess Count Detection in Epidemiological Time Series",
-  "description": "<p>This repository contains the R package excode with a variety of functions for excess count detection in epidemiological time series. Excess count detection is an important part of public health surveillance.</p>\n",
+  "description": "<p>The repository &quot;excode: Excess Count Detection in Epidemiological Time Series&quot; contains the R package excode with a variety of functions for excess count detection in epidemiological time series. Excess count detection is an important part of public health surveillance.</p>\n",
   "resource_type": {
     "id": "software"
   },
-  "publication_date": "2025-06-06",
+  "publication_date": "2025-10-22",
   "creators": [
     {
       "person_or_org": {
@@ -47,10 +47,10 @@
   ],
   "contributors": [],
   "publisher": "Zenodo",
-  "version": "v0.0.0.9000",
+  "version": "v0.0.0.9100",
   "dates": [
     {
-      "date": "2025-06-06T17:04:04+02:00",
+      "date": "2025-10-22T16:46:41+02:00",
       "type": {
         "id": "created"
       },

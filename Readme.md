@@ -20,7 +20,7 @@ Documentation
 <br> 
 
 **Cite**  
-Zacher, B., & Vietor, A. (2025). excode: Excess Count Detection in Epidemiological Time Series. Zenodo. [https://doi.org/10.5281/zenodo.15609781](https://doi.org/10.5281/zenodo.15609781)
+Zacher, B., & Vietor, A. (2025). excode: Excess Count Detection in Epidemiological Time Series. Zenodo. [https://doi.org/10.5281/zenodo.17417083](https://doi.org/10.5281/zenodo.17417083)
 
 
 <br>
