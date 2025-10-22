@@ -64,18 +64,18 @@
 #' 
 #' @examples
 #'
-#' data(shadar_df)
-#' res_har_pois <- run_excode(
-#'   surv_ts = shadar_df,
-#'   timepoints = 295,
-#'   distribution = "Poisson",
-#'   states = 2,
-#'   periodic_model = "Harmonic",
-#'   time_trend = "Linear",
-#'   set_baseline_state = TRUE
-#' )
-#' sum_har_pois <- summary(res_har_pois)
-#' plot_excode_summary(sum_har_pois, type="bar")
+#' data(mort_df_germany)
+#' res_har_nb <- run_excode(surv_ts = mort_df_germany,
+#' timepoints = 325,
+#' distribution = "NegBinom",
+#' states = 3,
+#' periodic_model = "Harmonic",
+#' time_trend = "Spline2",
+#' return_full_model = TRUE) 
+#' 
+#' sum_har_nb <- summary(res_har_nb)
+#' 
+#' plot_excode_summary(sum_har_nb, type="line")
 #'
 #' @importFrom ggplot2 ggplot aes geom_line geom_col geom_step geom_ribbon geom_hline
 #'   scale_color_manual facet_wrap xlab ylab theme_bw theme element_blank guides guide_legend

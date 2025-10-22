@@ -91,82 +91,37 @@ which are the most commonly used probability distributions for modeling
 count data. By combining hidden Markov models and generalized linear
 models, *excode* explicitly models normally expected case counts *and*
 expected excess case counts, i.e. each time point in a time series is
-labeled either as a normal state or as an excess state. A short overview
-of the statistical model used can be found at the end of this document.
-
-### Available models in *excode*
-
-There are five different model classes implemented in *excode*:
-
--   **Mean:** This model does not account for seasonal or cyclical
-    patterns. The expectancy of normal and excess case counts is modeled
-    as the mean of the historic data.
--   **FarringtonNoufaily:** This is a popular algorithm, which models
-    seasonality by segmenting a year into a predefined number of shorter
-    time periods, where each has a different expectancy of observed
-    cases. It also allows integration of a long-term time trend.
--   **Harmonic:** The 'Harmonic' model uses sine and cosine function to
-    account for seasonal or cyclical patterns in the data. It also
-    allows integration of long-term time trends.
--   **Custom:** The 'Custom' model allows the user define their own
-    model by providing a data frame containing covariate data.
-
-All of the above mentioned models use two states - a 'normal' and an
-'excess' state - to detect excess counts. However in some cases it might
-be necessary to allow multiple states, such as 'normal', 'low excess',
-'medium excess', 'high excess', to account for a wide range of excess
-counts and detect all periods showing an excess in a time series.
-
--   **MultiState:** The 'MultiState' model allows the use of multiple
-    states. The number of states can be specified by the user. Like in
-    the 'Custom' model, the user must provide covariate data to control
-    for possible seasonal or long-term time trends. The use of this
-    model is more advanced than the other models and requires some
-    additional steps before fitting.
-
-Further descriptions and code examples can be found in the
-`vignette("excode")`.
+labeled either as a normal state or as an excess state. Further descriptions 
+and code examples can be found in the `vignette("excode")`.
 
 ### Running an excode model
 
 The package's core function, `run_excode()` performs the excess count
 detection. The output of `run_excode()` is a fitted `excodeModel`
 object.\
-Before running the excess count detection, the user needs to decide
-which probability distribution and which model should be used. This is
-done using the `excodeFamily` and `excodeFormula` objects of the
-*excode* package. Both are then combined into an `excodeModel` object,
-which stores all necessary parameters and specifications for model
-fitting. In this example, the 'Poisson' distribution and the 'Harmonic'
-model is chosen.
+The following code example illustrates how to fit a three-state model with
+sine/cosine functions ('Harmonic') to model seasonal and a natural cubic 
+spline with two knots to caputre long-term trends ('Spline2').
 
 ``` commandline
-# Use a 'Poisson' distribution in excodeFamily
-excode_family_pois <- excodeFamily("Poisson")
-# Define the 'Harmonic' model in excodeFormula
-excode_formula_har = excodeFormula("Harmonic")
-# Combine both in the final excodeModel object
-excode_har_pois = excodeModel(excode_family_pois,
-                             excode_formula_har)
-                             
-# Run excode on time points 209-295 on Salmonella hadar shadar_df data.frame
-result_shadar_har <- run_excode(shadar_df, 
-                               excode_har_pois, 
-                               209:295)
-
-result_shadar_har
+library(excode)
+data(mort_df_germany)
+sum_har_nb <- run_excode(surv_ts = mort_df_germany,
+                         timepoints = 325,
+                         distribution = "NegBinom",
+                         states = 3,
+                         periodic_model = "Harmonic",
+                         time_trend = "Spline2",
+                         return_full_model = TRUE) 
 ```
 
-Results can be extracted using the `summary()` function:
+Results can be extracted using the `summary()` and plotted with the 
+`plot_excode_summary()` functions:
 
 ``` commandline
-summary_shadar_har <- summary(result_shadar_har)
-kable(as_tibble(summary_shadar_har[82:87,])) %>% 
-  kable_styling(font_size = 11)
+sum_har_nb <- summary(res_har_nb)
+plot_excode_summary(sum_har_nb)
 ```
-
-Further descriptions, other models and code examples are available in
-the `vignette("excode")`.
 
 ## Data
 
@@ -174,8 +129,7 @@ The package includes example datasets which can be used to apply the
 different algorithms.
 
 The following datasets are provided with this package:<br>
-**mort_df_germany**<br> **sarscov2_df**<br> **shadar_df**<br>
-**snewport_df**.
+**mort_df_germany**<br> **sarscov2_df**<br> **shadar_df**.
 
 <br>
 
@@ -196,12 +150,6 @@ source](https://robert-koch-institut.github.io/SARS-CoV-2-Infektionen_in_Deutsch
 
 The dataset **shadar_df** contains the weekly number of reported
 **Salmonella Hadar** cases from January 2001 to August 2006 in Germany.
-
-### Salmonella Newport cases in Germany (2004–2014)
-
-The dataset **snewport_df** contains the weekly number of reported
-**Salmonella Newport** cases from January 2004 to February 2014 in
-Germany.
 
 ## Administrative and organizational information
 
