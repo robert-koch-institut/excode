@@ -22,6 +22,9 @@
     <loc>https://robert-koch-institut.github.io/excode/reference/calcEmissionProb.html</loc>
   </url>
   <url>
+    <loc>https://robert-koch-institut.github.io/excode/reference/compute_baseline_state.html</loc>
+  </url>
+  <url>
     <loc>https://robert-koch-institut.github.io/excode/reference/Custom-class.html</loc>
   </url>
   <url>
@@ -67,6 +70,9 @@
     <loc>https://robert-koch-institut.github.io/excode/reference/index.html</loc>
   </url>
   <url>
+    <loc>https://robert-koch-institut.github.io/excode/reference/init_excode.html</loc>
+  </url>
+  <url>
     <loc>https://robert-koch-institut.github.io/excode/reference/Mean-class.html</loc>
   </url>
   <url>
@@ -79,10 +85,7 @@
     <loc>https://robert-koch-institut.github.io/excode/reference/NegBinom-class.html</loc>
   </url>
   <url>
-    <loc>https://robert-koch-institut.github.io/excode/reference/plot-excodeModel-ANY-method.html</loc>
-  </url>
-  <url>
-    <loc>https://robert-koch-institut.github.io/excode/reference/plot_model.html</loc>
+    <loc>https://robert-koch-institut.github.io/excode/reference/plot_excode_summary.html</loc>
   </url>
   <url>
     <loc>https://robert-koch-institut.github.io/excode/reference/Poisson-class.html</loc>
@@ -95,12 +98,6 @@
   </url>
   <url>
     <loc>https://robert-koch-institut.github.io/excode/reference/shadar_df.html</loc>
-  </url>
-  <url>
-    <loc>https://robert-koch-institut.github.io/excode/reference/snewport_df.html</loc>
-  </url>
-  <url>
-    <loc>https://robert-koch-institut.github.io/excode/reference/Splines-class.html</loc>
   </url>
   <url>
     <loc>https://robert-koch-institut.github.io/excode/reference/summary-excodeModel-method.html</loc>

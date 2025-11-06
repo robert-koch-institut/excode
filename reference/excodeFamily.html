@@ -10,7 +10,7 @@
     
     <a class="navbar-brand me-2" href="../index.html">excode</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9000</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9100</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -48,7 +48,7 @@
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">excodeFamily</span><span class="op">(</span><span class="va">name</span>, nb_size <span class="op">=</span> <span class="cn">NA</span>, shared_nb_size <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">excodeFamily</span><span class="op">(</span><span class="va">name</span>, nb_size <span class="op">=</span> <span class="cn">NA</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -59,10 +59,6 @@
 
 <dt>nb_size</dt>
 <dd><p>Size parameter of the Negative Binomial distribution. Only relevant if 'MultiState' model is used with a Negative Binomial dsitribution.</p></dd>
-
-
-<dt>shared_nb_size</dt>
-<dd><p>Logical indicating whether nb_size parameter is shared across multiple time series. Only relevant if name is "NegBinom".</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -76,15 +72,6 @@
     <div class="dont-index"><p><code><a href="excodeFamily-class.html">excodeFamily</a></code></p></div>
     </div>
 
-    <div class="section level2">
-    <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span></span></span>
-<span class="r-in"><span><span class="va">excode_family_pois</span> <span class="op">&lt;-</span> <span class="fu">excodeFamily</span><span class="op">(</span><span class="st">"Poisson"</span><span class="op">)</span></span></span>
-<span class="r-in"><span><span class="va">excode_family_pois</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> excodeFamily: Poisson</span>
-<span class="r-in"><span></span></span>
-</code></pre></div>
-    </div>
   </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>
     </nav></aside></div>
 
