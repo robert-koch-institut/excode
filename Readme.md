@@ -3,6 +3,7 @@
 
 
 Documentation  
+
 # excode: Excess Count Detection in Epidemiological Time Series
 
 <br> 
@@ -57,7 +58,7 @@ surveillance.
 This is an R package. You can use `install_github()` from devtools to
 install this package.
 
-``` commandline
+```r
 library(devtools)
 install_github("robert-koch-institut/excode",subdir = "software")
 ```
@@ -103,7 +104,7 @@ The following code example illustrates how to fit a three-state model with
 sine/cosine functions ('Harmonic') to model seasonal and a natural cubic 
 spline with two knots to caputre long-term trends ('Spline2').
 
-``` commandline
+```r
 library(excode)
 data(mort_df_germany)
 sum_har_nb <- run_excode(surv_ts = mort_df_germany,
@@ -118,7 +119,7 @@ sum_har_nb <- run_excode(surv_ts = mort_df_germany,
 Results can be extracted using the `summary()` and plotted with the 
 `plot_excode_summary()` functions:
 
-``` commandline
+```r
 sum_har_nb <- summary(res_har_nb)
 plot_excode_summary(sum_har_nb)
 ```

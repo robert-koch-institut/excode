@@ -16,6 +16,10 @@ jobs:
   pkgdown:
     runs-on: ubuntu-latest
     # Only restrict concurrency for non-PR jobs
+    defaults:
+      run:
+        working-directory: software
+        # specification that the job is run inside the software folder where the excode package lives
     concurrency:
       group: pkgdown-${{ github.event_name != 'pull_request' || github.run_id }}
     env:
@@ -33,6 +37,7 @@ jobs:
 
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
+          working-directory: software
           extra-packages: any::pkgdown, local::.
           needs: website
 
@@ -46,4 +51,4 @@ jobs:
         with:
           clean: false
           branch: gh-pages
-          folder: docs
+          folder: software/docs
