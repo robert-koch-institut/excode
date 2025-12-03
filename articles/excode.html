@@ -5,54 +5,42 @@
 <meta charset="utf-8">
 <meta http-equiv="X-UA-Compatible" content="IE=edge">
 <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
-<meta name="description" content="excode">
 <title>Excess count detection for epidemiological time series • excode</title>
 <script src="../deps/jquery-3.6.0/jquery-3.6.0.min.js"></script><meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
 <link href="../deps/bootstrap-5.3.1/bootstrap.min.css" rel="stylesheet">
-<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><!-- Font Awesome icons --><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/all.min.css" integrity="sha256-mmgLkCYLUQbXn0B1SRqzHar6dCnv9oZFPEC1g1cwlkk=" crossorigin="anonymous">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.12.1/css/v4-shims.min.css" integrity="sha256-wZjR52fzng1pJHwx4aV2AO3yyTOXrcDW7jBpJtTwVxw=" crossorigin="anonymous">
-<!-- bootstrap-toc --><script src="https://cdn.jsdelivr.net/gh/afeld/bootstrap-toc@v1.0.1/dist/bootstrap-toc.min.js" integrity="sha256-4veVQbu7//Lk5TSmc7YV48MxtMy98e26cf5MrgZYnwo=" crossorigin="anonymous"></script><!-- headroom.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/headroom.min.js" integrity="sha256-AsUX4SJE1+yuDu5+mAVzJbuYNPHj/WroHuZ8Ir/CkE0=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/headroom/0.11.0/jQuery.headroom.min.js" integrity="sha256-ZX/yNShbjqsohH1k95liqY9Gd8uOiE1S4vZc+9KQ1K4=" crossorigin="anonymous"></script><!-- clipboard.js --><script src="https://cdnjs.cloudflare.com/ajax/libs/clipboard.js/2.0.11/clipboard.min.js" integrity="sha512-7O5pXpc0oCRrxk8RUfDYFgn0nO1t+jLuIOQdOMRp4APB7uZ4vSjspzp5y6YDtDs4VzUSTbWzBFZ/LKJhnyFOKw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script><!-- search --><script src="https://cdnjs.cloudflare.com/ajax/libs/fuse.js/6.4.6/fuse.js" integrity="sha512-zv6Ywkjyktsohkbp9bb45V6tEMoWhzFzXis+LrMehmJZZSys19Yxf1dopHx7WzIKxr5tK2dVcYmaCk2uqdjF4A==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/autocomplete.js/0.38.0/autocomplete.jquery.min.js" integrity="sha512-GU9ayf+66Xx2TmpxqJpliWbT5PiGYxpaG8rfnBEk1LL8l1KGkRShhngwdXK1UgqhAzWpZHSiYPc09/NwDQIGyg==" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mark.js/8.11.1/mark.min.js" integrity="sha512-5CYOlHXGh6QpOFA/TeTylKLWfB3ftPsde7AnmhuitiTX4K5SqCLBeKro6sPS8ilsz1Q4NRx3v8Ko2IBiszzdww==" crossorigin="anonymous"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Excess count detection for epidemiological time series">
-<meta property="og:description" content="excode">
-<!-- mathjax --><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/MathJax.js" integrity="sha256-nvJJv9wWKEm88qvoQl9ekL2J+k/RWIsaSScxxlsrv8k=" crossorigin="anonymous"></script><script src="https://cdnjs.cloudflare.com/ajax/libs/mathjax/2.7.5/config/TeX-AMS-MML_HTMLorMML.js" integrity="sha256-84DKXVJXs0/F8OTMzX4UR909+jtl4G7SPypPavF+GfA=" crossorigin="anonymous"></script><!--[if lt IE 9]>
-<script src="https://oss.maxcdn.com/html5shiv/3.7.3/html5shiv.min.js"></script>
-<script src="https://oss.maxcdn.com/respond/1.4.2/respond.min.js"></script>
-<![endif]-->
+<script src="../deps/bootstrap-5.3.1/bootstrap.bundle.min.js"></script><link href="../deps/font-awesome-6.5.2/css/all.min.css" rel="stylesheet">
+<link href="../deps/font-awesome-6.5.2/css/v4-shims.min.css" rel="stylesheet">
+<script src="../deps/headroom-0.11.0/headroom.min.js"></script><script src="../deps/headroom-0.11.0/jQuery.headroom.min.js"></script><script src="../deps/bootstrap-toc-1.0.1/bootstrap-toc.min.js"></script><script src="../deps/clipboard.js-2.0.11/clipboard.min.js"></script><script src="../deps/search-1.0.0/autocomplete.jquery.min.js"></script><script src="../deps/search-1.0.0/fuse.min.js"></script><script src="../deps/search-1.0.0/mark.min.js"></script><!-- pkgdown --><script src="../pkgdown.js"></script><meta property="og:title" content="Excess count detection for epidemiological time series">
 </head>
 <body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
-    
 
-    <nav class="navbar fixed-top navbar-light navbar-expand-lg bg-light" data-bs-theme="light"><div class="container">
-    
+
+    <nav class="navbar navbar-expand-lg fixed-top bg-light" data-bs-theme="light" aria-label="Site navigation"><div class="container">
+
     <a class="navbar-brand me-2" href="../index.html">excode</a>
 
     <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.0.0.9100</small>
 
-    
+
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
       <span class="navbar-toggler-icon"></span>
     </button>
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
       <ul class="navbar-nav me-auto">
-<li class="active nav-item">
-  <a class="nav-link" href="../articles/excode.html">Get started</a>
-</li>
-<li class="nav-item">
-  <a class="nav-link" href="../reference/index.html">Reference</a>
-</li>
-<li class="nav-item">
-  <a class="nav-link" href="../news/index.html">Changelog</a>
-</li>
+<li class="active nav-item"><a class="nav-link" href="../articles/excode.html">Get started</a></li>
+<li class="nav-item"><a class="nav-link" href="../reference/index.html">Reference</a></li>
+<li class="nav-item"><a class="nav-link" href="../news/index.html">Changelog</a></li>
       </ul>
-<form class="form-inline my-2 my-lg-0" role="search">
-        <input type="search" class="form-control me-sm-2" aria-label="Toggle navigation" name="search-input" data-search-index="../search.json" id="search-input" placeholder="Search for" autocomplete="off">
-</form>
-
-      <ul class="navbar-nav"></ul>
+<ul class="navbar-nav">
+<li class="nav-item"><form class="form-inline" role="search">
+ <input class="form-control" type="search" name="search-input" id="search-input" autocomplete="off" aria-label="Search site" placeholder="Search for" data-search-index="../search.json">
+</form></li>
+      </ul>
 </div>
 
-    
+
   </div>
 </nav><div class="container template-article">
 
@@ -61,13 +49,14 @@
 <script src="excode_files/kePrint-0.0.1/kePrint.js"></script><link href="excode_files/lightable-0.0.1/lightable.css" rel="stylesheet">
 <div class="row">
   <main id="main" class="col-md-9"><div class="page-header">
-      <img src="" class="logo" alt=""><h1>Excess count detection for epidemiological time series</h1>
+
+      <h1>Excess count detection for epidemiological time series</h1>
                         <h4 data-toc-skip class="author">Benedikt
 Zacher</h4>
             
-            <h4 data-toc-skip class="date">2025-11-06</h4>
+            <h4 data-toc-skip class="date">2025-12-03</h4>
       
-      
+
       <div class="d-none name"><code>excode.Rmd</code></div>
     </div>
 
@@ -576,7 +565,7 @@ years</a>.</p>
 <span><span class="co"># Plot results for time points 209-295 with historic data</span></span>
 <span><span class="fu"><a href="../reference/plot_excode_summary.html">plot_excode_summary</a></span><span class="op">(</span><span class="va">shadar_plot</span>, type<span class="op">=</span><span class="st">"bar"</span><span class="op">)</span></span></code></pre></div>
 <div class="figure" style="text-align: center">
-<img src="excode_files/figure-html/unnamed-chunk-2-1.png" alt="**Figure 1:** Weekly *Salmonella Hadar* cases with fitted 'normal' (mu0) and 'excess' (mu1) state means. Bottom panels show posterior probability of excess case counts, z-scores and -log10(p-value) and the detected excess case counts for the three measures at selected cutoffs." width="672"><p class="caption">
+<img src="excode_files/figure-html/unnamed-chunk-2-1.png" class="r-plt" alt="**Figure 1:** Weekly *Salmonella Hadar* cases with fitted 'normal' (mu0) and 'excess' (mu1) state means. Bottom panels show posterior probability of excess case counts, z-scores and -log10(p-value) and the detected excess case counts for the three measures at selected cutoffs." width="672"><p class="caption">
 <strong>Figure 1:</strong> Weekly <em>Salmonella Hadar</em> cases with
 fitted ‘normal’ (mu0) and ‘excess’ (mu1) state means. Bottom panels show
 posterior probability of excess case counts, z-scores and
@@ -636,7 +625,7 @@ historic data (<code>time_units_back = 8</code>).</p>
 <span></span>
 <span><span class="fu"><a href="../reference/plot_excode_summary.html">plot_excode_summary</a></span><span class="op">(</span><span class="va">sarscov2_plot</span>, type<span class="op">=</span><span class="st">"bar"</span><span class="op">)</span></span></code></pre></div>
 <div class="figure" style="text-align: center">
-<img src="excode_files/figure-html/unnamed-chunk-5-1.png" alt="**Figure 2:** Daily reported SARS-CoV-2 infections in Berlin-Neukölln with fitted 'normal' (mu0) and 'excess' (mu1) state means. Bottom panels show posterior probability of excess case counts, z-scores and -log10(p-value) and the detected excess case counts for the three measures at selected cutoffs." width="672"><p class="caption">
+<img src="excode_files/figure-html/unnamed-chunk-5-1.png" class="r-plt" alt="**Figure 2:** Daily reported SARS-CoV-2 infections in Berlin-Neukölln with fitted 'normal' (mu0) and 'excess' (mu1) state means. Bottom panels show posterior probability of excess case counts, z-scores and -log10(p-value) and the detected excess case counts for the three measures at selected cutoffs." width="672"><p class="caption">
 <strong>Figure 2:</strong> Daily reported SARS-CoV-2 infections in
 Berlin-Neukölln with fitted ‘normal’ (mu0) and ‘excess’ (mu1) state
 means. Bottom panels show posterior probability of excess case counts,
@@ -772,7 +761,7 @@ follows. Note that, here the full model fit is plotted, since
 <div class="sourceCode" id="cb12"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plot_excode_summary.html">plot_excode_summary</a></span><span class="op">(</span><span class="va">summary_mort</span><span class="op">)</span></span></code></pre></div>
 <div class="figure" style="text-align: center">
-<img src="excode_files/figure-html/multistate_plot-1.png" alt="**Figure 6:** Weekly all-cause mortaility in Germany  with fitted 'normal' (mu0) and 'excess' (mu1, mu2) state means. Bottom panels show posterior probability of excess case counts, z-scores and -log10(p-value) and the detected excess case counts for the three measures at selected cutoffs." width="672"><p class="caption">
+<img src="excode_files/figure-html/multistate_plot-1.png" class="r-plt" alt="**Figure 6:** Weekly all-cause mortaility in Germany  with fitted 'normal' (mu0) and 'excess' (mu1, mu2) state means. Bottom panels show posterior probability of excess case counts, z-scores and -log10(p-value) and the detected excess case counts for the three measures at selected cutoffs." width="672"><p class="caption">
 <strong>Figure 6:</strong> Weekly all-cause mortaility in Germany with
 fitted ‘normal’ (mu0) and ‘excess’ (mu1, mu2) state means. Bottom panels
 show posterior probability of excess case counts, z-scores and
@@ -801,36 +790,72 @@ algorithms used for excess count detection, which either do not account
 for previous excess case counts or use some heuristic for down-weighting
 past instances of excess counts.</p>
 <p>For simplicity, we consider a two state model with ‘normal’ state
-<span class="math inline">\(N\)</span> and ‘excess’ state <span class="math inline">\(E\)</span>. Each position <span class="math inline">\(t\)</span> in the time series of length <span class="math inline">\(T\)</span> is in a state <span class="math inline">\(s_t \in \left\{ N,E\right\}, t\in
-\left[1;T\right]\)</span> , where <span class="math inline">\(N\)</span>
-represents the normal and <span class="math inline">\(E\)</span> the
-excess state. The sequence of normal and excess states is modeled by the
-HMM using initial state and transition probabilities:</p>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>N</mi><annotation encoding="application/x-tex">N</annotation></semantics></math>
+and ‘excess’ state
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>E</mi><annotation encoding="application/x-tex">E</annotation></semantics></math>.
+Each position
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math>
+in the time series of length
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>T</mi><annotation encoding="application/x-tex">T</annotation></semantics></math>
+is in a state
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>s</mi><mi>t</mi></msub><mo>∈</mo><mrow><mo stretchy="true" form="prefix">{</mo><mi>N</mi><mo>,</mo><mi>E</mi><mo stretchy="true" form="postfix">}</mo></mrow><mo>,</mo><mi>t</mi><mo>∈</mo><mrow><mo stretchy="true" form="prefix">[</mo><mn>1</mn><mo>;</mo><mi>T</mi><mo stretchy="true" form="postfix">]</mo></mrow></mrow><annotation encoding="application/x-tex">s_t \in \left\{ N,E\right\}, t\in \left[1;T\right]</annotation></semantics></math>
+, where
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>N</mi><annotation encoding="application/x-tex">N</annotation></semantics></math>
+represents the normal and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>E</mi><annotation encoding="application/x-tex">E</annotation></semantics></math>
+the excess state. The sequence of normal and excess states is modeled by
+the HMM using initial state and transition probabilities:</p>
 <ul>
-<li>Initial state probabilities <span class="math inline">\(\Pr(s_{1}=N\bigr)\)</span> and <span class="math inline">\(\Pr(s_{1}=E\bigr)\)</span> give the probability
-that the first time point of the time series is in the respective
-state.</li>
-<li>Transition probabilities give the probability that time point <span class="math inline">\(t\)</span> is in a specific state, given the state
-of the previous time point. For instance, <span class="math inline">\(\Pr\left(s_{t}=N\left|s_{t-1}=N\right.\right)\)</span>,
-<span class="math inline">\(t\in\left[1;T\right]\)</span> gives the
-probability that the time series is in the normal state at time point
-<span class="math inline">\(t\)</span>, given that position <span class="math inline">\(t-1\)</span> is also in the normal state. <span class="math inline">\(\Pr\left(s_{t}=E\left|s_{t-1}=N\right.\right)\)</span>
+<li>Initial state probabilities
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>Pr</mo><mo stretchy="false" form="prefix">(</mo><msub><mi>s</mi><mn>1</mn></msub><mo>=</mo><mi>N</mi><mo minsize="1.2" maxsize="1.2" stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\Pr(s_{1}=N\bigr)</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>Pr</mo><mo stretchy="false" form="prefix">(</mo><msub><mi>s</mi><mn>1</mn></msub><mo>=</mo><mi>E</mi><mo minsize="1.2" maxsize="1.2" stretchy="false" form="postfix">)</mo></mrow><annotation encoding="application/x-tex">\Pr(s_{1}=E\bigr)</annotation></semantics></math>
+give the probability that the first time point of the time series is in
+the respective state.</li>
+<li>Transition probabilities give the probability that time point
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math>
+is in a specific state, given the state of the previous time point. For
+instance,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>Pr</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>s</mi><mi>t</mi></msub><mo>=</mo><mi>N</mi><mrow><mo stretchy="true" form="prefix">|</mo><msub><mi>s</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>=</mo><mi>N</mi></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\Pr\left(s_{t}=N\left|s_{t-1}=N\right.\right)</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>t</mi><mo>∈</mo><mrow><mo stretchy="true" form="prefix">[</mo><mn>1</mn><mo>;</mo><mi>T</mi><mo stretchy="true" form="postfix">]</mo></mrow></mrow><annotation encoding="application/x-tex">t\in\left[1;T\right]</annotation></semantics></math>
+gives the probability that the time series is in the normal state at
+time point
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math>,
+given that position
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">t-1</annotation></semantics></math>
+is also in the normal state.
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>Pr</mo><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>s</mi><mi>t</mi></msub><mo>=</mo><mi>E</mi><mrow><mo stretchy="true" form="prefix">|</mo><msub><mi>s</mi><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow></msub><mo>=</mo><mi>N</mi></mrow><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">\Pr\left(s_{t}=E\left|s_{t-1}=N\right.\right)</annotation></semantics></math>
 gives the probability to transition to the excess state at time point
-<span class="math inline">\(t\)</span>, given that <span class="math inline">\(t-1\)</span> is in the normal state.</li>
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math>,
+given that
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mi>t</mi><mo>−</mo><mn>1</mn></mrow><annotation encoding="application/x-tex">t-1</annotation></semantics></math>
+is in the normal state.</li>
 </ul>
-<p>The expected case counts at position <span class="math inline">\(t\)</span>, <span class="math inline">\(\mu_t\)</span>, can be modeled using a GLM with
-sine and cosine functions to control for seasonal patterns (which is one
-of the models available in <em>excode</em>):</p>
-<p><span class="math display">\[
-\log\mu_{t}=\beta_{0}+\beta_{1}t+ \beta_3 \cos(\frac{2\pi}{52}t) +
-\beta_4\sin(\frac{2\pi}{52}t) +
+<p>The expected case counts at position
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mi>t</mi><annotation encoding="application/x-tex">t</annotation></semantics></math>,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>μ</mi><mi>t</mi></msub><annotation encoding="application/x-tex">\mu_t</annotation></semantics></math>,
+can be modeled using a GLM with sine and cosine functions to control for
+seasonal patterns (which is one of the models available in
+<em>excode</em>):</p>
+<p><math display="block" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><mo>log</mo><msub><mi>μ</mi><mi>t</mi></msub><mo>=</mo><msub><mi>β</mi><mn>0</mn></msub><mo>+</mo><msub><mi>β</mi><mn>1</mn></msub><mi>t</mi><mo>+</mo><msub><mi>β</mi><mn>3</mn></msub><mo>cos</mo><mrow><mo stretchy="true" form="prefix">(</mo><mfrac><mrow><mn>2</mn><mi>π</mi></mrow><mn>52</mn></mfrac><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>+</mo><msub><mi>β</mi><mn>4</mn></msub><mo>sin</mo><mrow><mo stretchy="true" form="prefix">(</mo><mfrac><mrow><mn>2</mn><mi>π</mi></mrow><mn>52</mn></mfrac><mi>t</mi><mo stretchy="true" form="postfix">)</mo></mrow><mo>+</mo><msub><mi>β</mi><mn>5</mn></msub><mi>I</mi><mrow><mo stretchy="true" form="prefix">(</mo><msub><mi>s</mi><mi>t</mi></msub><mo>=</mo><mi>E</mi><mo stretchy="true" form="postfix">)</mo></mrow></mrow><annotation encoding="application/x-tex">
+\log\mu_{t}=\beta_{0}+\beta_{1}t+ \beta_3 \cos(\frac{2\pi}{52}t) + \beta_4\sin(\frac{2\pi}{52}t) + 
 \beta_{5}I\left(s_{t}=E\right)
-\]</span></p>
-<p>Here, <span class="math inline">\(\beta_{0}\)</span> is the
-intercept, <span class="math inline">\(\beta_{1}t\)</span> a linear time
-trend, <span class="math inline">\(\beta_3\)</span> and <span class="math inline">\(\beta_4\)</span> model the seasonal patterns using
-<span class="math inline">\(\sin\)</span> and <span class="math inline">\(\cos\)</span> functions with weekly data (52 time
-points per year). The increase in cases is incorporated by <span class="math inline">\(\beta_{5}\)</span>.</p>
+</annotation></semantics></math></p>
+<p>Here,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>β</mi><mn>0</mn></msub><annotation encoding="application/x-tex">\beta_{0}</annotation></semantics></math>
+is the intercept,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mrow><msub><mi>β</mi><mn>1</mn></msub><mi>t</mi></mrow><annotation encoding="application/x-tex">\beta_{1}t</annotation></semantics></math>
+a linear time trend,
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>β</mi><mn>3</mn></msub><annotation encoding="application/x-tex">\beta_3</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>β</mi><mn>4</mn></msub><annotation encoding="application/x-tex">\beta_4</annotation></semantics></math>
+model the seasonal patterns using
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>sin</mo><annotation encoding="application/x-tex">\sin</annotation></semantics></math>
+and
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><mo>cos</mo><annotation encoding="application/x-tex">\cos</annotation></semantics></math>
+functions with weekly data (52 time points per year). The increase in
+cases is incorporated by
+<math display="inline" xmlns="http://www.w3.org/1998/Math/MathML"><semantics><msub><mi>β</mi><mn>5</mn></msub><annotation encoding="application/x-tex">\beta_{5}</annotation></semantics></math>.</p>
 <p>Based on this model, <em>excode</em> calculates a probability that
 there is an excess of case counts at the current time point - the
 posterior probability. Moreover, given the normally expected case counts
@@ -838,7 +863,7 @@ in the model, a p-value for the null hypothesis, that there is no excess
 at the current timepoint is calculated. The z-score is calculated based
 on a quasi-Poisson regression similar to <a href="https://www.destatis.de/DE/Themen/Gesellschaft-Umwelt/Bevoelkerung/Sterbefaelle-Lebenserwartung/sterbefallzahlen.html" class="external-link">EuroMOMO</a>.</p>
 </div>
-  </main><aside class="col-md-3"><nav id="toc"><h2>On this page</h2>
+  </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>
     </nav></aside>
 </div>
 
@@ -849,15 +874,15 @@ on a quasi-Poisson regression similar to <a href="https://www.destatis.de/DE/The
 </div>
 
 <div class="pkgdown-footer-right">
-  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.0.9.</p>
+  <p>Site built with <a href="https://pkgdown.r-lib.org/" class="external-link">pkgdown</a> 2.2.0.</p>
 </div>
 
     </footer>
 </div>
 
-  
 
-  
+
+
 
   </body>
 </html>

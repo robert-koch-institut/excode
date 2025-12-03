@@ -1,10 +1,9 @@
-pandoc: '3.4'
-pkgdown: 2.0.9
+pandoc: 3.1.11
+pkgdown: 2.2.0
 pkgdown_sha: ~
 articles:
   excode: excode.html
-last_built: 2025-11-06T13:13Z
+last_built: 2025-12-03T13:09Z
 urls:
   reference: https://robert-koch-institut.github.io/excode/reference
   article: https://robert-koch-institut.github.io/excode/articles
-

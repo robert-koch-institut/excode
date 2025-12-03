@@ -1,0 +1,64 @@
+# Package index
+
+## All functions
+
+- [`Custom-class`](https://robert-koch-institut.github.io/excode/reference/Custom-class.md)
+  : This class is a container for the parameterization using external
+  data.
+- [`Emission-class`](https://robert-koch-institut.github.io/excode/reference/Emission-class.md)
+  : Emission Class
+- [`Emission()`](https://robert-koch-institut.github.io/excode/reference/Emission.md)
+  : Create an Emission object for excess count detection
+- [`EmissionGLMNegBinom-class`](https://robert-koch-institut.github.io/excode/reference/EmissionGLMNegBinom-class.md)
+  : This class defines the Emission function for Negative Binomial GLMs.
+- [`EmissionGLMPoisson-class`](https://robert-koch-institut.github.io/excode/reference/EmissionGLMPoisson-class.md)
+  : This class defines the Emission function for Poisson GLMs.
+- [`FarringtonNoufaily-class`](https://robert-koch-institut.github.io/excode/reference/FarringtonNoufaily-class.md)
+  : This class is a container for the parameterization of the
+  FarringtonNoufaily models.
+- [`Harmonic-class`](https://robert-koch-institut.github.io/excode/reference/Harmonic-class.md)
+  : This class is a container for the parameterization of the Harmonic
+  models.
+- [`Mean-class`](https://robert-koch-institut.github.io/excode/reference/Mean-class.md)
+  : This class is a container for the parameterization of the Mean
+  models.
+- [`MultiState-class`](https://robert-koch-institut.github.io/excode/reference/MultiState-class.md)
+  : This class is a container for the parameterization of a MultiState
+  model.
+- [`NegBinom-class`](https://robert-koch-institut.github.io/excode/reference/NegBinom-class.md)
+  : This class is a generic container for a family of Negative Binomial
+  distributions
+- [`Poisson-class`](https://robert-koch-institut.github.io/excode/reference/Poisson-class.md)
+  : This class is a generic container for a family of Poisson
+  distributions
+- [`compute_baseline_state()`](https://robert-koch-institut.github.io/excode/reference/compute_baseline_state.md)
+  : Update EXCODE model by setting baseline states in surv_ts
+- [`excodeFamily-class`](https://robert-koch-institut.github.io/excode/reference/excodeFamily-class.md)
+  : This class is a generic container for a family of probability
+  distributions
+- [`excodeFamily()`](https://robert-koch-institut.github.io/excode/reference/excodeFamily.md)
+  : Create a family of probability distributions for excess count
+  detection.
+- [`excodeFormula-class`](https://robert-koch-institut.github.io/excode/reference/excodeFormula-class.md)
+  : excodeFormula Class
+- [`excodeFormula()`](https://robert-koch-institut.github.io/excode/reference/excodeFormula.md)
+  : Create a formula for excess count detection
+- [`excodeModel-class`](https://robert-koch-institut.github.io/excode/reference/excodeModel-class.md)
+  : excodeModel Class
+- [`excodeModel()`](https://robert-koch-institut.github.io/excode/reference/excodeModel.md)
+  : Create a model for excess count detection
+- [`init_excode()`](https://robert-koch-institut.github.io/excode/reference/init_excode.md)
+  : Initialize a multi-state EXCODE model from a surveillance time
+  series
+- [`mort_df_germany`](https://robert-koch-institut.github.io/excode/reference/mort_df_germany.md)
+  : German all-cause mortality data
+- [`plot_excode_summary()`](https://robert-koch-institut.github.io/excode/reference/plot_excode_summary.md)
+  : Plot EXCODE summary diagnostics across multiple panels
+- [`run_excode()`](https://robert-koch-institut.github.io/excode/reference/run_excode.md)
+  : Detect excess counts in epidemiological time series
+- [`sarscov2_df`](https://robert-koch-institut.github.io/excode/reference/sarscov2_df.md)
+  : SARS-CoV-2 infections in Berlin-Neukölln (Germany)
+- [`shadar_df`](https://robert-koch-institut.github.io/excode/reference/shadar_df.md)
+  : Salmonella Hadar cases in Germany 2001-2006
+- [`summary(`*`<excodeModel>`*`)`](https://robert-koch-institut.github.io/excode/reference/summary-excodeModel-method.md)
+  : Summary of an excodeModel
