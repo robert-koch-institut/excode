@@ -21,7 +21,9 @@ Documentation
 <br> 
 
 **Cite**  
-Zacher, B., & Vietor, A. (2025). excode: Excess Count Detection in Epidemiological Time Series. Zenodo. [https://doi.org/10.5281/zenodo.17417083](https://doi.org/10.5281/zenodo.17417083)
+<!-- CITATION_START: {"citation_style": "apa"} -->
+Zacher, B., & Vietor, A. (2026). excode: Excess Count Detection in Epidemiological Time Series. Zenodo. [https://doi.org/10.5281/zenodo.17417083](https://doi.org/10.5281/zenodo.17417083)
+<!-- CITATION_END -->
 
 
 <br>
@@ -31,19 +33,21 @@ The repository "excode: Excess Count Detection in Epidemiological Time Series" c
 
 <br>
 
-**Table of Content**
+**Table of Content**  
+
 <!-- TOC_START: {"heading_depth": 2} -->
-  - [Installation](#installation)
-  - [Overview](#overview)
-  - [Data](#data)
-  - [Administrative and organizational information](#administrative-and-organizational-information)
-  - [Funding](#funding)
-  - [Collaborate](#collaborate)
-  - [Publication platforms](#publication-platforms)
-  - [License](#license)
+  - [Installation](#installation)  
+  - [Overview](#overview)  
+  - [Data](#data)  
+  - [Administrative and organizational information](#administrative-and-organizational-information)  
+  - [Funding](#funding)  
+  - [Collaborate](#collaborate)  
+  - [Publication platforms](#publication-platforms)  
+  - [License](#license)  
 <!-- TOC_END -->
 
 <br>
+
 <!-- HEADER_END -->
 
 ------------------------------------------------------------------------
@@ -102,7 +106,7 @@ detection. The output of `run_excode()` is a fitted `excodeModel`
 object.\
 The following code example illustrates how to fit a three-state model with
 sine/cosine functions ('Harmonic') to model seasonal and a natural cubic 
-spline with two knots to caputre long-term trends ('Spline2').
+spline with two knots to capture long-term trends ('Spline2').
 
 ```r
 library(excode)
@@ -186,12 +190,11 @@ requests.
 
 This software publication is available on [Zenodo.org](http://Zenodo.org/), [GitHub.com](http://GitHub.com/) and [OpenCoDE](https://gitlab.opencode.de):  
 
-- https://zenodo.org/communities/robertkochinstitut  
-- https://github.com/robert-koch-institut  
-- https://gitlab.opencode.de/robert-koch-institut
-
+- [https://zenodo.org/communities/robertkochinstitut](https://zenodo.org/communities/robertkochinstitut)  
+- [https://github.com/robert-koch-institut](https://github.com/robert-koch-institut)  
+- [https://gitlab.opencode.de/robert-koch-institut](https://gitlab.opencode.de/robert-koch-institut)
 
 ## License
 
-**excode: Excess Count Detection in Epidemiological Time Series** is free and open-source software, published under the terms of the [GPL3 license](https://www.gnu.org/licenses/gpl-3.0.html).
+**excode: Excess Count Detection in Epidemiological Time Series** is free and open-source software, published under the terms of the [GPL3 license](https://www.gnu.org/licenses/gpl-3.0.en.html).
 <!-- FOOTER_END -->
