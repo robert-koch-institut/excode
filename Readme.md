@@ -160,7 +160,7 @@ The dataset **shadar_df** contains the weekly number of reported
 
 This R package was developed by Benedikt Zacher with contributions from
 Ann Christin Vietor [Unit 32 \|
-Surveillance](https://www.rki.de/fg32-en).
+Surveillance and Electronic Repor­ting and Infor­ma­tion Sys­tem (DEMIS) | Focal Point for the Public Health Service](https://www.rki.de/fg32-en).
 The publication of the code as well as the quality management of the
 metadata is done by department [MF 4 \| Domain Specific Data and
 Research Data
